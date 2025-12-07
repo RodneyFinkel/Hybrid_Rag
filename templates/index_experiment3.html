@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickRagAgent Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#10b981',
+                        accent: '#ec4899',
+                        glass: 'rgba(255, 255, 255, 0.1)',
+                    },
+                    animation: {
+                        marquee: 'marquee 20s linear infinite',
+                        pulse: 'pulse 1.5s ease-in-out infinite',
+                        fadeIn: 'fadeIn 0.3s ease-in',
+                    },
+                    keyframes: {
+                        marquee: {
+                            '0%': { transform: 'translateX(100%)' },
+                            '100%': { transform: 'translateX(-100%)' },
+                        },
+                        pulse: {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.5 },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: 0, transform: 'translateY(10px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        
+        #retrievalTable td:nth-child(2) {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #retrievalTable th {
+            cursor: pointer;
+        }
+        #retrievalTable th:hover {
+            background-color: #ddd;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glass-button {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+        }
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+            transition: transform 0.2s ease;
+        }
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        .slider::-moz-range-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+            transition: transform 0.2s ease;
+        }
+        .slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+        }
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .group:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .quote::before, .quote::after {
+            content: '"';
+        }
+        .mic-checkbox {
+            display: none;
+        }
+        .mic-checkbox:checked + .mic-button {
+            transform: rotateY(180deg);
+        }
+        .mic-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            width: 200px;
+            border-radius: 100%;
+            transition: transform 0.4s, box-shadow 0.3s;
+            border: 2px solid #47aca9;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+        .mic-button:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .button-message,
+        .mic {
+            backface-visibility: hidden;
+        }
+        .button-message {
+            position: absolute;
+            width: 50px;
+            color: #333;
+            font-family: "Arimo", sans-serif;
+            font-weight: 700;
+            font-size: 25px;
+            text-align: center;
+            line-height: 20px;
+            z-index: 2;
+            transform: rotateY(0deg);
+            pointer-events: none;
+            left: 58px;
+            top: 71px;
+        }
+        .mic-button-loader {
+            position: absolute;
+            height: 202px;
+            width: 200px;
+            background-color: transparent;
+            transform: rotateY(180deg);
+            top: -61px;
+            left: -101px;
+        }
+        .mic-checkbox:checked + .mic-button > .mic > .mic-button-loader {
+            border-top: 2.5px solid #13ef95;
+            border-radius: 100%;
+            animation: borderLoader 1.3s 0.2s ease-in-out infinite;
+        }
+        .mic {
+            position: relative;
+            top: -17px;
+            border: 20px solid #47aca9;
+            height: 48px;
+            width: 0;
+            border-radius: 45px;
+            transform: rotateY(180deg);
+        }
+        .mic:after,
+        .mic:before,
+        .mic-base {
+            position: absolute;
+        }
+        .mic:after {
+            content: "";
+            top: 16px;
+            left: -30px;
+            height: 57px;
+            width: 50px;
+            background-color: transparent;
+            border: 5px solid #47aca9;
+            border-bottom-left-radius: 102px;
+            border-bottom-right-radius: 110px;
+            border-top: 0;
+        }
+        .mic:before {
+            content: "";
+            top: 77px;
+            left: -2px;
+            border-bottom: 18px solid #47aca9;
+            border-left: 3px solid #47aca9;
+            border-right: 3px solid #47aca9;
+        }
+        .mic-base {
+            top: 95px;
+            left: -14px;
+            border-bottom: 7px solid #47aca9;
+            border-left: 15px solid #47aca9;
+            border-right: 15px solid #47aca9;
+        }
+        @keyframes borderLoader {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(359deg); }
+        }
+        #captions {
+            color: #333;
+            font-size: 24px;
+            font-family: "Inter", sans-serif;
+            margin: 10px 0;
+            text-align: center;
+            width: 80%;
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        h2 {
+            font-family: "Arimo", sans-serif;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1f2937;
+            letter-spacing: -0.02em;
+        }
+        .button-container {
+            display: flex;
+            gap: 16px;
+        }
+        .spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #6366f1;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col font-sans antialiased">
+    <header class="glass shadow-md border-b border-gray-100/20">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href='https://github.com/RodneyFinkel' target="_blank" rel="noopener noreferrer">
+                <img class="navbar-logo w-16 h-16 rounded-full hover:opacity-90 transition-opacity" src="{{ url_for('static', filename='alep.png') }}" alt="Logo">
+            </a>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">QuickRagAgent</h1>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-700 dark:text-gray-200">Hello, {{ session['username'] }}</span>
+                <div id="weatherDisplay" class="glass rounded-full px-3 py-1 text-sm text-gray-700 dark:text-gray-200"></div>
+                <button id="themeToggle" class="group relative glass-button border border-gray-200/20 p-2 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 transition-all duration-200" title="Toggle theme">
+                    <svg id="lightIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg id="darkIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Toggle theme</span>
+                </button>
+                <a href="{{ url_for('signout') }}" class="glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-primary hover:text-indigo-400 text-sm font-medium transition-all duration-200">Sign Out</a>
+                <div id="clock" class="glass rounded-full px-3 py-1 text-sm text-gray-700 dark:text-gray-200"></div>
+            </div>
+        </div>
+    </header>
+    <section class="glass w-3/4 mx-auto mt-6 p-4 rounded-xl transition-all duration-300 hover:shadow-lg">
+        <div class="overflow-hidden">
+            <div id="stockTicker" class="animate-marquee whitespace-nowrap text-sm text-gray-700 dark:text-gray-200"></div>
+        </div>
+    </section>
+    
+    <div class="container mx-auto px-6 py-8 flex flex-1">
+        <aside class="w-80 pr-6 space-y-6 lg:sticky lg:top-8">
+            <button id="sidebarToggle" class="lg:hidden glass-button border border-gray-200/20 p-2 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 transition-all duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <div id="sidebar" class="space-y-6 hidden lg:block">
+                <div class="glass rounded-xl p-6 transition-all duration-300 hover:shadow-lg">
+                    <h2 class="flex justify-between items-center">
+                        STT-vectorDB-LLM-TTS
+                        <span id="transcriberStatus" class="text-xs px-2 py-1 rounded-full bg-gray-200/80 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">Idle</span>
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="button-container">
+                            <div class="content">
+                                <div class="button-container">
+                                    <input type="checkbox" id="record" class="mic-checkbox" />
+                                    <label for="record" class="mic-button" onclick="startTranscription()">
+                                        <div class="mic">
+                                            <div class="mic-button-loader"></div>
+                                            <div class="mic-base"></div>
+                                        </div>
+                                        <div class="button-message">
+                                            <span>&nbsp;</span>
+                                            <span> START </span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <button onclick="stopTranscription()" class="group relative w-full glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white text-sm font-medium transition-all duration-200">
+                                Stop
+                                <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10">Stop transcription</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-6 transition-all duration-300 hover:shadow-lg">
+                    <h2>RAG Upload</h2>
+                    <input type="file" id="pdfUpload" multiple accept=".pdf" class="hidden">
+                    <label for="pdfUpload" class="group relative w-full glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-secondary hover:text-emerald-600 text-sm font-medium cursor-pointer flex justify-center transition-all duration-200">
+                        Select PDFs
+                        <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10">Choose PDF files</span>
+                    </label>
+                    <button onclick="uploadPDF()" class="group relative w-full mt-2 glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-primary hover:text-indigo-400 text-sm font-medium transition-all duration-200">
+                        Upload
+                        <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10">Upload selected PDFs</span>
+                    </button>
+                    <div id="uploadProgress" class="mt-2 h-2 bg-gray-200/50 dark:bg-gray-700/50 rounded-full hidden">
+                        <div id="progressBar" class="h-full bg-secondary rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="glass rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg">
+                    <button onclick="toggleAccordion('searchConfig')" class="w-full px-6 py-4 text-lg font-semibold flex justify-between items-center border-b border-gray-200/20">
+                        Search Config
+                        <svg class="w-5 h-5 transition-transform" id="searchArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="searchConfig" class="px-6 py-4 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-sm font-medium">Config Status</h3>
+                            <span id="configStatus" class="text-xs px-2 py-1 rounded-full bg-gray-200/80 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">Loading...</span>
+                        </div>
+                        <div class="group relative">
+                            <label>Enable Online Research: <input type="checkbox" id="onlineResearchToggle" checked></label>
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Similarity Threshold</label>
+                            <input type="range" id="similarity_threshold" min="0" max="1" step="0.01" value="0.3" class="w-full slider">
+                            <div class="flex justify-between text-xs mt-1 text-gray-600 dark:text-gray-400">
+                                <span>0</span>
+                                <span id="similarity_value">0.3</span>
+                                <span>1</span>
+                            </div>
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Adjust retrieval relevance (0 to 1)</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Enable Hybrid Search</label>
+                            <input type="checkbox" id="hybrid_enabled" class="h-4 w-4 text-primary focus:ring-primary rounded">
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Combine semantic and keyword search</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Semantic Weight</label>
+                            <input type="range" id="semantic_weight" min="0" max="1" step="0.01" value="0.7" class="w-full slider">
+                            <div class="flex justify-between text-xs mt-1 text-gray-600 dark:text-gray-400">
+                                <span>0</span>
+                                <span id="semantic_weight_value">0.7</span>
+                                <span>1</span>
+                            </div>
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Weight for semantic search (0 to 1)</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">BM25 Weight</label>
+                            <input type="range" id="bm25_weight" min="0" max="1" step="0.01" value="0.3" class="w-full slider">
+                            <div class="flex justify-between text-xs mt-1 text-gray-600 dark:text-gray-400">
+                                <span>0</span>
+                                <span id="bm25_weight_value">0.3</span>
+                                <span>1</span>
+                            </div>
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Weight for keyword (BM25) search (0 to 1)</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">BM25 k1 (Term Saturation)</label>
+                            <input type="range" id="bm25_k1" min="0.5" max="2.0" step="0.1" value="1.2" class="w-full slider">
+                            <div class="flex justify-between text-xs mt-1 text-gray-600 dark:text-gray-400">
+                                <span>0.5</span>
+                                <span id="bm25_k1_value">1.2</span>
+                                <span>2.0</span>
+                            </div>
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Controls term frequency impact (0.5 to 2.0)</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">BM25 b (Length Normalization)</label>
+                            <input type="range" id="bm25_b" min="0" max="1" step="0.01" value="0.75" class="w-full slider">
+                            <div class="flex justify-between text-xs mt-1 text-gray-600 dark:text-gray-400">
+                                <span>0</span>
+                                <span id="bm25_b_value">0.75</span>
+                                <span>1</span>
+                            </div>
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Controls document length impact (0 to 1)</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Enable ColBERT Reranking</label>
+                            <input type="checkbox" id="rerank_enabled" class="h-4 w-4 text-primary focus:ring-primary rounded">
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Rerank results with ColBERT for better accuracy</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Rerank Top K</label>
+                            <input type="number" id="rerank_k" min="1" value="50" class="w-full bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-gray-700 dark:text-gray-200">
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Number of documents to rerank (min 1)</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">ColBERT Model</label>
+                            <select id="colbert_model" class="w-full bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-gray-700 dark:text-gray-200">
+                                <option value="colbert-ir/colbertv2.0">ColBERTv2.0</option>
+                                <option value="colbert-ir/colbertv1">ColBERTv1</option>
+                            </select>
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Select ColBERT model for reranking</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="setPreset('semantic')" class="group relative flex-1 glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-primary hover:text-indigo-400 text-sm font-medium transition-all duration-200">
+                                Semantic Only
+                                <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Set to semantic search only</span>
+                            </button>
+                            <button onclick="setPreset('balanced')" class="group relative flex-1 glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-primary hover:text-indigo-400 text-sm font-medium transition-all duration-200">
+                                Balanced Hybrid
+                                <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Set to balanced hybrid search</span>
+                            </button>
+                            <button onclick="setPreset('keyword')" class="group relative flex-1 glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-primary hover:text-indigo-400 text-sm font-medium transition-all duration-200">
+                                Keyword Heavy
+                                <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Set to keyword-heavy search</span>
+                            </button>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="updateRetrievalConfig()" class="group relative flex-1 glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-secondary hover:text-emerald-600 text-sm font-medium transition-all duration-200">
+                                Update
+                                <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Apply search settings</span>
+                                <span id="updateSpinner" class="spinner ml-2"></span>
+                            </button>
+                            <button onclick="resetRetrievalConfig()" class="group relative flex-1 glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-red-600 hover:text-red-700 text-sm font-medium transition-all duration-200">
+                                Reset
+                                <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Reset to default settings</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="toggleAccordion('chunkingConfig')" class="w-full px-6 py-4 text-lg font-semibold flex justify-between items-center border-b border-gray-200/20">
+                        Chunking Config
+                        <svg class="w-5 h-5 transition-transform" id="chunkingArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="chunkingConfig" class="px-6 py-4 space-y-4 hidden">
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Ingest Chunk Size</label>
+                            <input type="number" id="ingest_chunk_size" class="w-full bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-gray-700 dark:text-gray-200">
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Size of document chunks for ingestion</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Ingest Overlap</label>
+                            <input type="number" id="ingest_overlap" class="w-full bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-gray-700 dark:text-gray-200">
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Overlap between ingestion chunks</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">LLM Chunk Size</label>
+                            <input type="number" id="llm_chunk_size" class="w-full bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-gray-700 dark:text-gray-200">
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Size for LLM processing chunks</span>
+                        </div>
+                        <div class="group relative">
+                            <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">LLM Overlap</label>
+                            <input type="number" id="llm_overlap" class="w-full bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-gray-700 dark:text-gray-200">
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Overlap for LLM chunks</span>
+                        </div>
+                        <!-- After existing sliders -->
+                        <div class="mt-4">
+                            <label for="chunking_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Chunking Type</label>
+                            <select id="chunking_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                                <option value="semantic">Semantic (Recommended)</option>
+                                <option value="fixed">Fixed-Size</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose between semantic (context-aware) or fixed-size chunking.</p>
+                        </div>
+                        <div class="mt-4">
+                            <label for="semantic_threshold" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Semantic Similarity Threshold</label>
+                            <input type="range" id="semantic_threshold" min="0" max="1" step="0.05" value="0.6" class="w-full">
+                            <span id="semantic_threshold_value">0.6</span>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Higher = fewer, larger chunks; Lower = more, smaller chunks (0-1).</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="updateChunkingConfig()" class="group relative flex-1 glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-secondary hover:text-emerald-600 text-sm font-medium transition-all duration-200">
+                                Update
+                                <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Apply chunking settings</span>
+                            </button>
+                            <button onclick="resetChunkingConfig()" class="group relative flex-1 glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-red-600 hover:text-red-700 text-sm font-medium transition-all duration-200">
+                                Reset
+                                <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Reset to default chunking settings</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <main class="flex-1 space-y-6">
+            <div class="glass rounded-xl p-6 transition-all duration-300 hover:shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2>Documents</h2>
+                    <div class="flex items-center space-x-4">
+                        <input type="text" id="documentSearch" class="bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-sm text-gray-700 dark:text-gray-200" placeholder="Search by filename or summary">
+                        <button onclick="listDocuments()" class="group relative glass-button border border-gray-200/20 px-3 py-1 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-primary hover:text-indigo-400 text-sm font-medium transition-all duration-200">
+                            Refresh
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Reload document list</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-auto max-h-96">
+                    <table class="w-full text-sm">
+                        <thead class="sticky top-0 glass">
+                            <tr class="border-b border-gray-200/20">
+                                <th class="py-2 text-left text-gray-700 dark:text-gray-200">Filename</th>
+                                <th class="py-2 text-left text-gray-700 dark:text-gray-200">Summary</th>
+                                <th class="py-2 text-left text-gray-700 dark:text-gray-200">Upload Time</th>
+                                <th class="py-2 text-left text-gray-700 dark:text-gray-200">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentsBody" class="divide-y divide-gray-200/20"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass rounded-xl p-6 transition-all duration-300 hover:shadow-lg">
+                    <h2>Transcript</h2>
+                    <p id="transcript" class="bg-gray-50/50 dark:bg-gray-800/50 p-4 rounded-lg min-h-[120px] text-sm text-gray-700 dark:text-gray-200 overflow-auto">No transcript available yet.</p>
+                    <div class="mt-4">
+                        <label for="manualQuery" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type a Query</label>
+                        <input type="text" id="manualQuery" placeholder="Enter your query..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <button type="button" onclick="submitQuery()" class="mt-2 group relative glass-button border border-gray-200/20 px-4 py-2 rounded-full hover:bg-blue-100/30 dark:hover:bg-blue-900/30 text-blue-600 hover:text-blue-700 font-medium transition-all duration-200">
+                            Submit Query
+                            <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Send typed query</span>
+                        </button>
+                        <div style="margin-top: 10px;">
+                            <button onclick="exportHistory('json')">Export History (JSON)</button>
+                            <button onclick="exportHistory('csv')">Export History (CSV)</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-6 transition-all duration-300 hover:shadow-lg">
+                    <h2>LLM Response</h2>
+                    <p id="response" class="bg-gray-50/50 dark:bg-gray-800/50 p-4 rounded-lg min-h-[120px] text-sm text-gray-700 dark:text-gray-200 overflow-auto">No response yet.</p>
+                </div>
+                <div class="section">
+                    <h2>Last Retrieval</h2>
+                    <div id="scoreChart"></div>
+                    <table id="retrievalTable">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Snippet</th>
+                                <th>Similarity (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <!-- <div class="glass rounded-xl p-6 transition-all duration-300 hover:shadow-lg">
+                    <h2>Chunking Info</h2>
+                    <div id="chunking-info" class="bg-gray-50/50 dark:bg-gray-800/50 p-4 rounded-lg min-h-[120px] text-sm text-gray-700 dark:text-gray-200 overflow-auto">No data</div>
+                </div> -->
+            </div>
+        </main>
+    </div>
+    <footer class="glass border-t border-gray-100/20 py-4 text-center text-sm text-gray-600 dark:text-gray-400">
+        <section class="glass max-w-2xl mx-auto mt-6 p-6 rounded-xl text-center transition-all duration-300 hover:shadow-lg">
+        <p id="quoteDisplay" class="text-sm md:text-base text-gray-700 italic quote"></p>
+        <button onclick="newQuote()" class="group relative glass-button border border-gray-200/50 px-3 py-1 rounded-full hover:bg-white/30 text-primary hover:text-indigo-400 text-sm font-medium mt-2 transition-all duration-200">
+            New Quote
+            <span class="absolute invisible group-hover:visible bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2">Generate new quote</span>
+        </button>
+    </section>
+        © 2025 QuickRagAgent. All rights reserved.
+    </footer>
+    <script>
+
+
+         // Export History
+        function exportHistory(format) {
+            // Open in new tab to trigger download
+            window.open(`/export_history_${format}`, '_blank');
+            console.log(`Exporting history as ${format.toUpperCase()}`);
+    }
+
+        // Create tooltip element
+        const tooltip = d3.select('body')
+            .append('div')
+            .attr('class', 'tooltip')
+            .style('opacity', 0);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            const lightIcon = document.getElementById('lightIcon');
+            const darkIcon = document.getElementById('darkIcon');
+            themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                lightIcon.classList.toggle('hidden');
+                darkIcon.classList.toggle('hidden');
+            });
+
+            // Fetch and display last retrieval results
+        async function fetchLastRetrieval() {
+            try {
+                const response = await fetch('/get_last_retrieval');
+                const data = await response.json();
+                const retrievalList = document.getElementById('last-retrieval-list');
+                retrievalList.innerHTML = ''; // Clear existing rows
+                if (data.results.length === 0) {
+                    retrievalList.innerHTML = '<tr><td colspan="3" class="p-2 text-center">No retrieval data available</td></tr>';
+                    return;
+                }
+                data.results.forEach(result => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="p-2">${result.filename}</td>
+                        <td class="p-2">${result.snippet}</td>
+                        <td class="p-2">${result.similarity}%</td>
+                    `;
+                    retrievalList.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching last retrieval:', error);
+                document.getElementById('last-retrieval-list').innerHTML = '<tr><td colspan="3" class="p-2 text-center">Error loading data</td></tr>';
+            }
+        }
+
+        document.getElementById('onlineResearchToggle').addEventListener('change', (event) => {
+            fetch('/set_online_research', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({enabled: event.target.checked})
+            })
+            .then(response => response.json())
+            .then(data => console.log('Online research:', data))
+            .catch(error => console.error('Error:', error));
+        });
+
+            // Clock
+            function updateClock() {
+                const now = new Date();
+                document.getElementById('clock').textContent = now.toLocaleTimeString();
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // Weather
+            function fetchWeather() {
+                fetch('/weather?city=Haifa')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById('weatherDisplay').textContent = 'Weather: Error';
+                        } else {
+                            document.getElementById('weatherDisplay').textContent = `Weather in ${data.city}: ${data.temperature}°C, ${data.description}`;
+                        }
+                    });
+            }
+            fetchWeather();
+
+            // Stock Ticker
+            function fetchStocks() {
+                fetch('/stocks')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById('stockTicker').textContent = 'Stocks: Error';
+                        } else {
+                            const tickerText = data.map(stock => `${stock.symbol}: $${stock.price || 'N/A'}`).join(' | ');
+                            document.getElementById('stockTicker').textContent = tickerText;
+                        }
+                    });
+            }
+            fetchStocks();
+            setInterval(fetchStocks, 60000);
+
+            // Quote
+            function newQuote() {
+                fetch('/quote')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById('quoteDisplay').textContent = 'Failed to fetch quote';
+                        } else {
+                            document.getElementById('quoteDisplay').textContent = `"${data.quote}" - ${data.author}`;
+                        }
+                    });
+            }
+            newQuote();
+
+            // Transcription
+            let pollingInterval;
+            function startTranscription() {
+                fetch('/start_transcription', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'Transcription started') {
+                            document.getElementById('transcriberStatus').textContent = 'Active';
+                            document.getElementById('record').classList.add('hidden');
+                            startPolling();
+                        } else {
+                            Toastify({
+                                text: data.status,
+                                duration: 3000,
+                                style: { background: '#ef4444' }
+                            }).showToast();
+                        }
+                    })
+                    .catch(error => {
+                        Toastify({
+                            text: 'Error starting transcription: ' + error,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                    });
+            }
+
+            function stopTranscription() {
+                fetch('/stop_transcription', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('transcriberStatus').textContent = 'Idle';
+                        document.getElementById('startIcon')?.classList.remove('hidden');
+                        stopPolling();
+                        Toastify({
+                            text: data.status,
+                            duration: 3000,
+                            style: { background: '#10b981' }
+                        }).showToast();
+                    })
+                    .catch(error => {
+                        Toastify({
+                            text: 'Error stopping transcription: ' + error,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                    });
+            }
+
+            function startPolling() {
+                pollingInterval = setInterval(() => {
+                    fetch('/get_data')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'Active') {
+                                document.getElementById('transcript').textContent = data.transcript || 'No transcript available yet.';
+                                document.getElementById('response').textContent = data.llm_response || 'No response yet.';
+                            } else {
+                                document.getElementById('transcript').textContent = 'Transcription inactive.';
+                                document.getElementById('response').textContent = 'No response yet.';
+                            }
+                        });
+                }, 2000);
+            }
+
+            function stopPolling() {
+                clearInterval(pollingInterval);
+            }
+
+
+            // NEW: Submit Typed Query
+            function submitQuery() {
+                const query = document.getElementById('manualQuery').value.trim();
+                if (!query) {
+                    Toastify({
+                        text: 'Please enter a query.',
+                        duration: 3000,
+                        style: { background: '#ef4444' }
+                    }).showToast();
+                    return;
+                }
+                document.getElementById('transcript').textContent = `Query: ${query}`;
+                document.getElementById('response').textContent = 'Processing...';
+                fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            Toastify({
+                                text: data.error,
+                                duration: 3000,
+                                style: { background: '#ef4444' }
+                            }).showToast();
+                            document.getElementById('response').textContent = 'Error processing query.';
+                        } else {
+                            document.getElementById('response').textContent = data.response || 'No response yet.';
+                            updateRetrievalTable();  // Refresh table after query
+                            Toastify({
+                                text: 'Query processed successfully!',
+                                duration: 3000,
+                                style: { background: '#10b981' }
+                            }).showToast();
+                            
+                        }
+                    })
+                    .catch(error => {
+                        Toastify({
+                            text: 'Error submitting query: ' + error,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                        document.getElementById('response').textContent = 'Error processing query.';
+                    });
+            }
+
+            // PDF Upload
+            function uploadPDF() {
+                const pdfInput = document.getElementById('pdfUpload');
+                const progressBar = document.getElementById('progressBar');
+                const uploadProgress = document.getElementById('uploadProgress');
+                if (pdfInput.files.length === 0) {
+                    Toastify({
+                        text: 'Please select at least one PDF file.',
+                        duration: 3000,
+                        style: { background: '#ef4444' }
+                    }).showToast();
+                    return;
+                }
+                const formData = new FormData();
+                for (let file of pdfInput.files) {
+                    formData.append('pdf', file);
+                }
+                uploadProgress.classList.remove('hidden');
+                progressBar.style.width = '0%';
+                fetch('/upload_pdf', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        progressBar.style.width = '100%';
+                        setTimeout(() => uploadProgress.classList.add('hidden'), 500);
+                        Toastify({
+                            text: data.status,
+                            duration: 3000,
+                            style: { background: '#10b981' }
+                        }).showToast();
+                        listDocuments();
+                    })
+                    .catch(error => {
+                        progressBar.style.width = '100%';
+                        setTimeout(() => uploadProgress.classList.add('hidden'), 500);
+                        Toastify({
+                            text: 'Error uploading PDF: ' + error,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                    });
+            }
+
+            // Documents
+            let allDocuments = [];
+            function listDocuments() {
+                fetch('/get_documents')
+                    .then(response => response.json())
+                    .then(documents => {
+                        allDocuments = documents;
+                        const searchQuery = document.getElementById('documentSearch').value.toLowerCase();
+                        const filteredDocuments = searchQuery
+                            ? documents.filter(doc =>
+                                doc.filename.toLowerCase().includes(searchQuery) ||
+                                doc.summary.toLowerCase().includes(searchQuery)
+                            )
+                            : documents;
+                        const tbody = document.getElementById('documentsBody');
+                        tbody.innerHTML = '';
+                        filteredDocuments.forEach(doc => {
+                            const row = document.createElement('tr');
+                            row.classList.add('animate-fadeIn');
+                            row.innerHTML = `
+                                <td class="py-2 text-left text-gray-700 dark:text-gray-200">${doc.filename}</td>
+                                <td class="py-2 text-left text-gray-700 dark:text-gray-200">${doc.summary}</td>
+                                <td class="py-2 text-left text-gray-700 dark:text-gray-200">${doc.upload_time}</td>
+                                <td class="py-2 text-left">
+                                    <button onclick="deleteDocument('${doc.doc_id}')" class="group relative glass-button border border-gray-200/20 px-2 py-1 rounded-full hover:bg-red-100/30 dark:hover:bg-red-900/30 text-red-600 hover:text-red-700 text-sm font-medium transition-all duration-200">
+                                        Delete
+                                        <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Delete document</span>
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    });
+            }
+            listDocuments();
+
+            // Delete Document
+            function deleteDocument(docId) {
+                if (confirm(`Are you sure you want to delete document ${docId}?`)) {
+                    fetch('/delete_document', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ doc_id: docId })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            Toastify({
+                                text: data.status,
+                                duration: 3000,
+                                style: { background: '#10b981' }
+                            }).showToast();
+                            listDocuments();
+                        })
+                        .catch(error => {
+                            Toastify({
+                                text: 'Error deleting document: ' + error,
+                                duration: 3000,
+                                style: { background: '#ef4444' }
+                            }).showToast();
+                        });
+                }
+            }
+
+            // Search Documents
+            document.getElementById('documentSearch').addEventListener('input', listDocuments);
+
+            // Config Accordion
+            function toggleAccordion(id) {
+                const element = document.getElementById(id);
+                const arrow = document.getElementById(id === 'searchConfig' ? 'searchArrow' : 'chunkingArrow');
+                element.classList.toggle('hidden');
+                arrow.classList.toggle('rotate-180');
+            }
+
+            // Search Config
+            const similaritySlider = document.getElementById('similarity_threshold');
+            const similarityValue = document.getElementById('similarity_value');
+            similaritySlider.addEventListener('input', () => {
+                similarityValue.textContent = similaritySlider.value;
+            });
+
+            const semanticWeightSlider = document.getElementById('semantic_weight');
+            const semanticWeightValue = document.getElementById('semantic_weight_value');
+            const bm25WeightSlider = document.getElementById('bm25_weight');
+            const bm25WeightValue = document.getElementById('bm25_weight_value');
+
+            // Synchronize weight sliders to sum to 1
+            semanticWeightSlider.addEventListener('input', () => {
+                semanticWeightValue.textContent = semanticWeightSlider.value;
+                bm25WeightSlider.value = (1 - parseFloat(semanticWeightSlider.value)).toFixed(2);
+                bm25WeightValue.textContent = bm25WeightSlider.value;
+            });
+            bm25WeightSlider.addEventListener('input', () => {
+                bm25WeightValue.textContent = bm25WeightSlider.value;
+                semanticWeightSlider.value = (1 - parseFloat(bm25WeightSlider.value)).toFixed(2);
+                semanticWeightValue.textContent = semanticWeightSlider.value;
+            });
+
+            const bm25K1Slider = document.getElementById('bm25_k1');
+            const bm25K1Value = document.getElementById('bm25_k1_value');
+            bm25K1Slider.addEventListener('input', () => {
+                bm25K1Value.textContent = bm25K1Slider.value;
+            });
+
+            const bm25BSlider = document.getElementById('bm25_b');
+            const bm25BValue = document.getElementById('bm25_b_value');
+            bm25BSlider.addEventListener('input', () => {
+                bm25BValue.textContent = bm25BSlider.value;
+            });
+
+            function updateRetrievalConfig() {
+                const updateButton = document.querySelector('#searchConfig button[onclick="updateRetrievalConfig()"]');
+                const spinner = document.getElementById('updateSpinner');
+                updateButton.disabled = true;
+                spinner.style.display = 'inline-block';
+
+                const data = {
+                    hybrid_enabled: document.getElementById('hybrid_enabled').checked,
+                    semantic_weight: parseFloat(document.getElementById('semantic_weight').value),
+                    bm25_weight: parseFloat(document.getElementById('bm25_weight').value),
+                    bm25_k1: parseFloat(document.getElementById('bm25_k1').value),
+                    bm25_b: parseFloat(document.getElementById('bm25_b').value),
+                    rerank_enabled: document.getElementById('rerank_enabled').checked,
+                    rerank_k: parseInt(document.getElementById('rerank_k').value),
+                    colbert_model: document.getElementById('colbert_model').value
+                };
+
+                // Client-side validation
+                if (data.hybrid_enabled && Math.abs(data.semantic_weight + data.bm25_weight - 1.0) > 0.01) {
+                    Toastify({
+                        text: 'Semantic and BM25 weights must sum to 1',
+                        duration: 3000,
+                        style: { background: '#ef4444' }
+                    }).showToast();
+                    updateButton.disabled = false;
+                    spinner.style.display = 'none';
+                    return;
+                }
+                if (data.rerank_k < 1) {
+                    Toastify({
+                        text: 'Rerank Top K must be at least 1',
+                        duration: 3000,
+                        style: { background: '#ef4444' }
+                    }).showToast();
+                    updateButton.disabled = false;
+                    spinner.style.display = 'none';
+                    return;
+                }
+
+                console.log('Sending retrieval config:', data);
+
+                fetch('/set_retrieval_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        if (!response.ok) {
+                            return response.text().then(text => { throw new Error(`HTTP ${response.status}: ${text}`); });
+                        }
+                        return response.json();
+                    })
+                    .then(result => {
+                        console.log('Response data:', result);
+                        Toastify({
+                            text: result.status,
+                            duration: 3000,
+                            style: { background: '#10b981' }
+                        }).showToast();
+                        fetchRetrievalConfig();
+                        updateButton.disabled = false;
+                        spinner.style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error updating retrieval config:', error);
+                        Toastify({
+                            text: 'Error updating retrieval config: ' + error.message,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                        updateButton.disabled = false;
+                        spinner.style.display = 'none';
+                    });
+            }
+
+            function resetRetrievalConfig() {
+                const defaultConfig = {
+                    hybrid_enabled: false,
+                    semantic_weight: 0.7,
+                    bm25_weight: 0.3,
+                    bm25_k1: 1.2,
+                    bm25_b: 0.75,
+                    rerank_enabled: false,
+                    rerank_k: 50,
+                    colbert_model: 'colbert-ir/colbertv2.0'
+                };
+                document.getElementById('hybrid_enabled').checked = defaultConfig.hybrid_enabled;
+                document.getElementById('semantic_weight').value = defaultConfig.semantic_weight;
+                document.getElementById('semantic_weight_value').textContent = defaultConfig.semantic_weight;
+                document.getElementById('bm25_weight').value = defaultConfig.bm25_weight;
+                document.getElementById('bm25_weight_value').textContent = defaultConfig.bm25_weight;
+                document.getElementById('bm25_k1').value = defaultConfig.bm25_k1;
+                document.getElementById('bm25_k1_value').textContent = defaultConfig.bm25_k1;
+                document.getElementById('bm25_b').value = defaultConfig.bm25_b;
+                document.getElementById('bm25_b_value').textContent = defaultConfig.bm25_b;
+                document.getElementById('rerank_enabled').checked = defaultConfig.rerank_enabled;
+                document.getElementById('rerank_k').value = defaultConfig.rerank_k;
+                document.getElementById('colbert_model').value = defaultConfig.colbert_model;
+                updateRetrievalConfig();
+            }
+
+            function setPreset(preset) {
+                const presets = {
+                    semantic: {
+                        hybrid_enabled: false,
+                        semantic_weight: 1.0,
+                        bm25_weight: 0.0,
+                        bm25_k1: 1.2,
+                        bm25_b: 0.75,
+                        rerank_enabled: false,
+                        rerank_k: 50,
+                        colbert_model: 'colbert-ir/colbertv2.0'
+                    },
+                    balanced: {
+                        hybrid_enabled: true,
+                        semantic_weight: 0.5,
+                        bm25_weight: 0.5,
+                        bm25_k1: 1.2,
+                        bm25_b: 0.75,
+                        rerank_enabled: true,
+                        rerank_k: 50,
+                        colbert_model: 'colbert-ir/colbertv2.0'
+                    },
+                    keyword: {
+                        hybrid_enabled: true,
+                        semantic_weight: 0.2,
+                        bm25_weight: 0.8,
+                        bm25_k1: 1.5,
+                        bm25_b: 0.9,
+                        rerank_enabled: true,
+                        rerank_k: 50,
+                        colbert_model: 'colbert-ir/colbertv2.0'
+                    }
+                };
+                const config = presets[preset];
+                document.getElementById('hybrid_enabled').checked = config.hybrid_enabled;
+                document.getElementById('semantic_weight').value = config.semantic_weight;
+                document.getElementById('semantic_weight_value').textContent = config.semantic_weight;
+                document.getElementById('bm25_weight').value = config.bm25_weight;
+                document.getElementById('bm25_weight_value').textContent = config.bm25_weight;
+                document.getElementById('bm25_k1').value = config.bm25_k1;
+                document.getElementById('bm25_k1_value').textContent = config.bm25_k1;
+                document.getElementById('bm25_b').value = config.bm25_b;
+                document.getElementById('bm25_b_value').textContent = config.bm25_b;
+                document.getElementById('rerank_enabled').checked = config.rerank_enabled;
+                document.getElementById('rerank_k').value = config.rerank_k;
+                document.getElementById('colbert_model').value = config.colbert_model;
+                updateRetrievalConfig();
+            }
+
+            function updateConfigStatus(data) {
+                const status = document.getElementById('configStatus');
+                status.textContent = data.hybrid_enabled 
+                    ? `Hybrid: On, Rerank: ${data.rerank_enabled ? 'On' : 'Off'}`
+                    : `Hybrid: Off, Rerank: ${data.rerank_enabled ? 'On' : 'Off'}`;
+                status.className = `text-xs px-2 py-1 rounded-full ${
+                    data.hybrid_enabled || data.rerank_enabled 
+                        ? 'bg-green-200/80 dark:bg-green-700/80 text-green-800 dark:text-green-200' 
+                        : 'bg-gray-200/80 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300'
+                }`;
+            }
+
+            function fetchRetrievalConfig() {
+                fetch('/get_retrieval_config')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('hybrid_enabled').checked = data.hybrid_enabled;
+                        document.getElementById('semantic_weight').value = data.semantic_weight;
+                        document.getElementById('semantic_weight_value').textContent = data.semantic_weight;
+                        document.getElementById('bm25_weight').value = data.bm25_weight;
+                        document.getElementById('bm25_weight_value').textContent = data.bm25_weight;
+                        document.getElementById('bm25_k1').value = data.bm25_k1;
+                        document.getElementById('bm25_k1_value').textContent = data.bm25_k1;
+                        document.getElementById('bm25_b').value = data.bm25_b;
+                        document.getElementById('bm25_b_value').textContent = data.bm25_b;
+                        document.getElementById('rerank_enabled').checked = data.rerank_enabled;
+                        document.getElementById('rerank_k').value = data.rerank_k;
+                        document.getElementById('colbert_model').value = data.colbert_model;
+                        document.getElementById('similarity_threshold').value = data.similarity_threshold;
+                        document.getElementById('similarity_value').textContent = data.similarity_threshold;
+                        updateConfigStatus(data);
+                    })
+                    .catch(error => {
+                        Toastify({
+                            text: 'Error fetching retrieval config: ' + error,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                    });
+            }
+            fetchRetrievalConfig();
+
+            // Chunking Config
+            function fetchChunkingConfig() {
+                fetch('/get_chunking_config')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('ingest_chunk_size').value = data.chunk_size_ingest;
+                        document.getElementById('ingest_overlap').value = data.chunk_overlap_ingest;
+                        document.getElementById('llm_chunk_size').value = data.chunk_size_llm;
+                        document.getElementById('llm_overlap').value = data.chunk_overlap_llm;
+                        document.getElementById('similarity_threshold').value = data.similarity_threshold;
+                        document.getElementById('similarity_value').textContent = data.similarity_threshold;
+                        // NEW: Set chunking_type and semantic_threshold from server
+                        document.getElementById('chunking_type').value = data.chunking_type || 'semantic';
+                        document.getElementById('semantic_threshold').value = data.semantic_threshold || 0.6;
+                        document.getElementById('semantic_threshold_value').textContent = data.semantic_threshold || 0.6;// NEW: Set chunking_type and semantic_threshold from server
+                        document.getElementById('chunking_type').value = data.chunking_type || 'semantic';
+                        document.getElementById('semantic_threshold').value = data.semantic_threshold || 0.6;
+                        document.getElementById('semantic_threshold_value').textContent = data.semantic_threshold || 0.6;
+                    })
+                    .catch(error => {
+                        Toastify({
+                            text: 'Error fetching chunking config: ' + error,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                    });
+            }
+            fetchChunkingConfig();
+
+
+            function updateChunkingConfig() {
+                const data = {
+                    chunk_size_ingest: document.getElementById('ingest_chunk_size').value,
+                    chunk_overlap_ingest: document.getElementById('ingest_overlap').value,
+                    chunk_size_llm: document.getElementById('llm_chunk_size').value,
+                    chunk_overlap_llm: document.getElementById('llm_overlap').value,
+                    similarity_threshold: document.getElementById('similarity_threshold').value,
+                    // NEW: Add chunking_type and semantic_threshold to the data object
+                    chunking_type: document.getElementById('chunking_type').value,
+                    semantic_threshold: parseFloat(document.getElementById('semantic_threshold').value)
+                };
+                fetch('/set_chunking_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        Toastify({
+                            text: result.status,
+                            duration: 3000,
+                            style: { background: '#10b981' }
+                        }).showToast();
+                    })
+                    .catch(error => {
+                        Toastify({
+                            text: 'Error updating chunking config: ' + error,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                    });
+            }
+
+            // NEW: Event listener for semantic_threshold slider display
+            document.getElementById('semantic_threshold').addEventListener('input', (e) => {
+                document.getElementById('semantic_threshold_value').textContent = e.target.value;
+            });
+
+            function resetChunkingConfig() {
+                const defaultConfig = {
+                    chunk_size_ingest: 1000,
+                    chunk_overlap_ingest: 100,
+                    chunk_size_llm: 1000,
+                    chunk_overlap_llm: 100,
+                    similarity_threshold: 0.3
+                };
+                document.getElementById('ingest_chunk_size').value = defaultConfig.chunk_size_ingest;
+                document.getElementById('ingest_overlap').value = defaultConfig.chunk_overlap_ingest;
+                document.getElementById('llm_chunk_size').value = defaultConfig.chunk_size_llm;
+                document.getElementById('llm_overlap').value = defaultConfig.chunk_overlap_llm;
+                document.getElementById('similarity_threshold').value = defaultConfig.similarity_threshold;
+                document.getElementById('similarity_value').textContent = defaultConfig.similarity_threshold;
+                // NEW: Reset chunking_type and semantic_threshold
+                document.getElementById('chunking_type').value = defaultConfig.chunking_type;
+                document.getElementById('semantic_threshold').value = defaultConfig.semantic_threshold;
+                document.getElementById('semantic_threshold_value').textContent = defaultConfig.semantic_threshold;
+                updateChunkingConfig();
+            }
+
+            // Update Retrieval Table
+            function updateRetrievalTable() {
+                fetch('/get_last_retrieval')
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        const tbody = document.querySelector('#retrievalTable tbody');
+                        tbody.innerHTML = '';
+                        if (data.status === 'Success' && data.results && data.results.length > 0) {
+                            data.results.forEach(result => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${result.filename || 'Unknown'}</td>
+                                    <td>${result.snippet || 'No snippet'}</td>
+                                    <td>${(result.similarity * 100).toFixed(1)}%</td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                            console.log(`Added ${data.results.length} rows to retrieval table`);
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="3">No retrieval data available</td></tr>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching retrieval:', error);
+                        const tbody = document.querySelector('#retrievalTable tbody');
+                        tbody.innerHTML = '<tr><td colspan="3">Error loading results</td></tr>';
+                    });
+            }
+
+
+            // Render Bar Chart for Similarity and BM25 Scores
+            function renderScoreChart() {
+                fetch('/get_last_retrieval')
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status !== 'Success' || !data.results || data.results.length === 0) {
+                            console.log('No data for score chart');
+                            d3.select('#scoreChart').selectAll('*').remove();
+                            d3.select('#scoreChart').append('p').text('No data available for chart');
+                            return;
+                        }
+
+                        const margin = { top: 20, right: 30, bottom: 100, left: 60 };
+                        const width = 800 - margin.left - margin.right;
+                        const height = 400 - margin.top - margin.bottom;
+
+                        d3.select('#scoreChart').selectAll('*').remove();
+                        const svg = d3.select('#scoreChart')
+                            .append('svg')
+                            .attr('width', width + margin.left + margin.right)
+                            .attr('height', height + margin.top + margin.bottom)
+                            .append('g')
+                            .attr('transform', `translate(${margin.left},${margin.top})`);
+
+                        const x = d3.scaleBand()
+                            .domain(data.results.map(d => d.doc_id))
+                            .range([0, width])
+                            .padding(0.4);
+
+                        const y = d3.scaleLinear()
+                            .domain([0, 1])
+                            .range([height, 0]);
+
+                        // Similarity bars
+                        svg.selectAll('.similarity-bar')
+                            .data(data.results)
+                            .enter()
+                            .append('rect')
+                            .attr('class', 'similarity-bar')
+                            .attr('x', d => x(d.doc_id))
+                            .attr('y', d => y(d.similarity))
+                            .attr('width', x.bandwidth() / 2)
+                            .attr('height', d => height - y(d.similarity))
+                            .attr('fill', '#4CAF50')
+                            .on('mouseover', function(event, d) {
+                                d3.select(this).attr('opacity', 0.8);
+                                tooltip.style('opacity', 1)
+                                    .html(`<strong>${d.filename}</strong><br>Similarity: ${(d.similarity * 100).toFixed(1)}%`)
+                                    .style('left', (event.pageX + 10) + 'px')
+                                    .style('top', (event.pageY - 10) + 'px');
+                            })
+                            .on('mouseout', function() {
+                                d3.select(this).attr('opacity', 1);
+                                tooltip.style('opacity', 0);
+                            });
+
+                        // BM25 bars
+                        svg.selectAll('.bm25-bar')
+                            .data(data.results)
+                            .enter()
+                            .append('rect')
+                            .attr('class', 'bm25-bar')
+                            .attr('x', d => x(d.doc_id) + x.bandwidth() / 2)
+                            .attr('y', d => y(d.bm25_score || 0))
+                            .attr('width', x.bandwidth() / 2)
+                            .attr('height', d => height - y(d.bm25_score || 0))
+                            .attr('fill', '#2196F3')
+                            .on('mouseover', function(event, d) {
+                                d3.select(this).attr('opacity', 0.8);
+                                tooltip.style('opacity', 1)
+                                    .html(`<strong>${d.filename}</strong><br>BM25: ${(d.bm25_score || 0).toFixed(2)}`)
+                                    .style('left', (event.pageX + 10) + 'px')
+                                    .style('top', (event.pageY - 10) + 'px');
+                            })
+                            .on('mouseout', function() {
+                                d3.select(this).attr('opacity', 1);
+                                tooltip.style('opacity', 0);
+                            });
+
+                        // Axes
+                        svg.append('g')
+                            .attr('transform', `translate(0,${height})`)
+                            .call(d3.axisBottom(x))
+                            .selectAll('text')
+                            .attr('transform', 'rotate(-45)')
+                            .style('text-anchor', 'end');
+
+                        svg.append('g')
+                            .call(d3.axisLeft(y).tickFormat(d => `${(d * 100).toFixed(0)}%`));
+
+                        // Labels
+                        svg.append('text')
+                            .attr('x', width / 2)
+                            .attr('y', -10)
+                            .attr('text-anchor', 'middle')
+                            .text('Similarity and BM25 Scores');
+
+                        svg.append('text')
+                            .attr('x', -height / 2)
+                            .attr('y', -40)
+                            .attr('transform', 'rotate(-90)')
+                            .attr('text-anchor', 'middle')
+                            .text('Score');
+                    })
+                    .catch(error => console.error('Error rendering score chart:', error));
+            }
+
+            // Update Chunking Info
+            function updateChunkingInfo() {
+                fetch('/get_chunking_info')
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        const chunkingElem = document.getElementById('chunkingInfo');
+                        chunkingElem.textContent = JSON.stringify(data, null, 2);
+                    })
+                    .catch(error => console.error('Error fetching chunking info:', error));
+        }
+
+            // Refresh Info (polling for both table and chunking)
+            function refreshInfo() {
+                updateRetrievalTable();
+                updateChunkingInfo();
+                renderScoreChart();  // Update chart
+            }
+            setInterval(refreshInfo, 5000);
+            refreshInfo();
+
+            
+
+            // Sidebar Toggle
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('hidden');
+            });
+
+            // Expose functions to global scope
+            window.startTranscription = startTranscription;
+            window.stopTranscription = stopTranscription;
+            window.uploadPDF = uploadPDF;
+            window.listDocuments = listDocuments;
+            window.deleteDocument = deleteDocument;
+            window.newQuote = newQuote;
+            window.toggleAccordion = toggleAccordion;
+            window.updateRetrievalConfig = updateRetrievalConfig;
+            window.resetRetrievalConfig = resetRetrievalConfig;
+            window.setPreset = setPreset;
+            window.updateChunkingConfig = updateChunkingConfig;
+            window.resetChunkingConfig = resetChunkingConfig;
+            window.submitQuery = submitQuery;
+        });
+    </script>
+</body>
+</html>
