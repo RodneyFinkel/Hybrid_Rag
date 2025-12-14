@@ -135,9 +135,7 @@ class LanguageModelProcessor:
                     if page_content and "failed" not in page_content.lower():
                         full_content.append(f"From '{result['title']}' ({url}): {page_content}")
                     else:
-                        full_content.append(f"From '{result['title']}' ({url}): {result['body'][:200]}...") # Fallback to summary
-                
-                
+                        full_content.append(f"From '{result['title']}' ({url}): {result['body'][:200]}...") # Fallback to summary                              
                 
                 #summaries = [f"- {r['title']}: {r['body'][:150]}...({r['href']})" for r in search_results]
                 #summary = "\n".join(summaries)

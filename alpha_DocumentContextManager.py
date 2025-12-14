@@ -1,5 +1,5 @@
 # Using chromadb
-from chromadb import Client
+import chromadb #import Client
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer # Upgrade from BERT embeddings
 import numpy as np
@@ -16,10 +16,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class DocumentContextManager:
     def __init__(self, similarity_threshold=0.15):
         self.id = str(uuid.uuid4())
-        self.client = Client(Settings(persist_directory="./chroma_storage", anonymized_telemetry=False))
-        logging.info("Chroma Initialized")
+        # self.client = Client(Settings(persist_directory="./chroma_storage", anonymized_telemetry=False))
+        # logging.info("Chroma Initialized")
+        self.client = chromadb.PersistentClient(path="./chroma_storage")  # ← Change to this
+        logging.info("Persistent Chroma Initialized - Data auto-saves to ./chroma_storage/")
         self.collection = self.client.get_or_create_collection("documents", metadata={"hnsw:space": "cosine"}) # Ensure cosine similarity is used
-        
+        logging.info(f"Chroma collection loaded: {self.collection.count()} total documents persisted")
         self.model = SentenceTransformer('all-MiniLM-L6-v2') # New model
         logging.info("SentenceTransformer Initialized")
         
@@ -133,19 +135,59 @@ class DocumentContextManager:
         return normalized_scores
     
     # Add this method to DocumentContextManager class in alpha_DocumentContextManager.py
+    # def rebuild_bm25_from_chroma(self):
+    #     all_data = self.collection.get(include=['documents'])
+    #     self.documents_for_bm25 = []
+    #     for doc in all_data['documents']:
+    #         tokenized_doc = doc.lower().split()
+    #         if tokenized_doc:
+    #             self.documents_for_bm25.append(tokenized_doc)
+    #     if self.documents_for_bm25:
+    #         try:
+    #             self.bm25_index = BM25Okapi(self.documents_for_bm25)
+    #             logging.info(f"Rebuilt BM25 index from {len(self.documents_for_bm25)} existing documents")
+    #         except Exception as e:
+    #             logging.error(f"Failed to rebuild BM25 from Chroma: {str(e)}")
+                
+    # Fix BM25 rebuild call
     def rebuild_bm25_from_chroma(self):
-        all_data = self.collection.get(include=['documents'])
-        self.documents_for_bm25 = []
-        for doc in all_data['documents']:
-            tokenized_doc = doc.lower().split()
-            if tokenized_doc:
-                self.documents_for_bm25.append(tokenized_doc)
-        if self.documents_for_bm25:
+        # Fetch everything we need: text, metadata, and IDs
+        data = self.collection.get(include=["documents", "metadatas"])
+        documents = data.get("documents", [])
+        metadatas = data.get("metadatas", [])
+        ids = data.get("ids", [])
+        
+        if not documents:
+            logging.info("No documents found in Chroma collection for BM25 rebuild")
+            self.bm25_index = None
+            self.doc_id_to_bm25_index = {}
+            return
+        
+        # Tokenize only non-empty documents
+        tokenized_docs = []
+        self.doc_id_to_bm25_index = {}  # Map Chroma ID → index in BM25 corpus
+        
+        for i, doc in enumerate(documents):
+            if not doc or not doc.strip():
+                continue
+            tokenized = doc.lower().split()
+            if tokenized:
+                tokenized_docs.append(tokenized)
+                self.doc_id_to_bm25_index[ids[i]] = len(tokenized_docs) - 1  # Map to position in BM25
+        
+        if tokenized_docs:
             try:
-                self.bm25_index = BM25Okapi(self.documents_for_bm25)
-                logging.info(f"Rebuilt BM25 index from {len(self.documents_for_bm25)} existing documents")
+                self.bm25_index = BM25Okapi(tokenized_docs)
+                logging.info(f"Successfully rebuilt BM25 index from {len(tokenized_docs)} persisted documents")
             except Exception as e:
-                logging.error(f"Failed to rebuild BM25 from Chroma: {str(e)}")
+                logging.error(f"Failed to rebuild BM25 index: {str(e)}")
+                self.bm25_index = None
+                self.doc_id_to_bm25_index = {}
+        else:
+            logging.info("No valid non-empty documents to build BM25 index")
+            self.bm25_index = None
+            self.doc_id_to_bm25_index = {}
+        
     
 
     

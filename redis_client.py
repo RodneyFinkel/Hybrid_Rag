@@ -1,0 +1,28 @@
+import redis
+import json
+import hashlib
+from functools import wraps # make the wrapper preserve the original function's metadata
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+def cache_result(ttl=86400):
+    def decorator(fn):
+        @wraps(fn) 
+        def wrapper(*args, **kwargs):
+            # Create cache key based on function name + args + kwargs
+            key_parts = [fn.__name__] + [str(a) for a in args] + [f"{k}:{v}" for k,v in kwargs.items()]
+            cache_key = hashlib.md5(" ".join(key_parts).encode()).hexdigest()  # MD5 accepts byte sequences, encode strings into bytes using the encode() method
+            
+            # Try cache
+            cached = redis_client.get(cache_key)
+            if cached:
+                return json.loads(cached)
+            
+            # If no cache hit compute and cache result
+            result = fn(*args, **kwargs)
+            redis_client.setex(cache_key, ttl, json.dumps(result))
+            return result
+        return wrapper
+    return decorator
+
+            
