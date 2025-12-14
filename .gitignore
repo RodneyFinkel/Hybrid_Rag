@@ -24,3 +24,6 @@ chroma_storage/
 *.log
 *.sqlite3
 groq_deepgram_agent.tar
+
+# Redis dumps files
+dump.rdb    

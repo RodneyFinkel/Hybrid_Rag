@@ -33,6 +33,7 @@ from deepgram import (
     LiveOptions,
     Microphone,
 )
+from redis_client import cache_result # New: Import cahing decorator for web search DDGS
 
 # NEW: Setup logging to catcg errors and debug info
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -115,7 +116,8 @@ class LanguageModelProcessor:
             logging.error(f"Browse page error for {url}: {str(e)}")
             return "Page processing failed."
                                      
-    # NEW Web Search function using DUCKDUCKGO    
+    # NEW Web Search function using DUCKDUCKGO and caching with redis
+    @cache_result(ttl=600) # Cahce Results for 10 minutes   
     def perform_web_search_with_browse(self, query, num_results=3):
         # Clean query: Remove trigger phrases to focus on intent
         clean_query = self.web_search_pattern.sub('', query).strip()
@@ -169,6 +171,7 @@ class LanguageModelProcessor:
             i += chunk_size - overlap
         return chunks
 
+    @cache_result(ttl=1800) # Cache LLM process results for 30 minutes
     def process(self, text):
         """Process a query with optional web search and RAG, returning LLM response."""
         

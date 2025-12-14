@@ -2,6 +2,9 @@ import redis
 import json
 import hashlib
 from functools import wraps # make the wrapper preserve the original function's metadata
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
@@ -16,9 +19,11 @@ def cache_result(ttl=86400):
             # Try cache
             cached = redis_client.get(cache_key)
             if cached:
+                logging.info(f"Redis CACHE HIT: {cache_key[:16]}... for {fn.__name__}")
                 return json.loads(cached)
             
             # If no cache hit compute and cache result
+            logging.info(f"Redis CACHE MISS: {cache_key[:16]}... for {fn.__name__}")
             result = fn(*args, **kwargs)
             redis_client.setex(cache_key, ttl, json.dumps(result))
             return result

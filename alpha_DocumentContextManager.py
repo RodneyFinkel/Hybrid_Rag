@@ -6,6 +6,7 @@ import numpy as np
 import time
 import logging
 import uuid
+from redis_client import cache_result # Import caching decorator
 
 # New Imports for Hybrid Search
 from rank_bm25 import BM25Okapi
@@ -134,7 +135,6 @@ class DocumentContextManager:
         logging.info(f"BM25 scores normalized: min={min_score}, max={max_score}")
         return normalized_scores
     
-    # Add this method to DocumentContextManager class in alpha_DocumentContextManager.py
     # def rebuild_bm25_from_chroma(self):
     #     all_data = self.collection.get(include=['documents'])
     #     self.documents_for_bm25 = []
@@ -187,11 +187,11 @@ class DocumentContextManager:
             logging.info("No valid non-empty documents to build BM25 index")
             self.bm25_index = None
             self.doc_id_to_bm25_index = {}
-        
-    
+
 
     
-    #  Using Chromadb
+    #  Using Chromadb and Redis Caching
+    @cache_result(ttl=600) # Cache results for 10 minutes
     def get_similar_documents(self, query, top_k=10, keyword_filter=None):
         logging.info("initiating get_similar_documents function")
         print(self.bm25_index)
