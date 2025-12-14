@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session, Response
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session, Response, stream_with_context
 import json
 import csv
 from io import StringIO
@@ -21,6 +21,7 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer # NEW
 import re # New
 from sentence_transformers.util import cos_sim #New
+from redis_client import redis_client # New Route for Redis pub/sub added at end of file
 
 
 # NEW: Setup logging
@@ -625,6 +626,20 @@ def export_history_csv():
     except Exception as e:
         logging.error(f"CSV export error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+    
+    
+# ADD THIS ROUTE FOR REDIS PUB/SUB
+@app.route('/stream_retrieval')
+def stream_retrieval():
+    def event_stream():
+        pubsub = redis_client.pubsub()
+        pubsub.subscribe('retrieval_channel')
+        
+        for message in pubsub.listen():
+            if message.get('type') == 'message':
+                yield f"data: {message.get('data')}\n\n"
+    
+    return Response(stream_with_context(event_stream()), mimetype='text/event-stream')
     
         
      

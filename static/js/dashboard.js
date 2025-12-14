@@ -823,13 +823,38 @@ function exportHistory(format) {
         }
 
             // Refresh Info (polling for both table and chunking)
-            function refreshInfo() {
-                updateRetrievalTable();
-                updateChunkingInfo();
-                renderScoreChart();  // Update chart
+            // function refreshInfo() {
+            //     updateRetrievalTable();
+            //     updateChunkingInfo();
+            //     renderScoreChart();  // Update chart
+            // }
+            // setInterval(refreshInfo, 5000);
+            // refreshInfo();
+
+
+            // REPLACE THE ENTIRE BLOCK ABOVE WITH THIS (removes polling, adds SSE)
+            function refreshInfo(data) {
+                updateRetrievalTable(data.results);  // Pass new results
+                updateChunkingInfo();               // Keep if needed, or make real-time too
+                renderScoreChart();                 // Your existing chart function
             }
-            setInterval(refreshInfo, 5000);
-            refreshInfo();
+
+            // SSE listener for real-time updates
+            const evtSource = new EventSource('/stream_retrieval');
+            evtSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log("Real-time retrieval via Redis Pub/Sub:", data);
+                refreshInfo(data);  // Update with pushed data
+            };
+
+            evtSource.onerror = function() {
+                console.error("SSE error — falling back to polling");
+                evtSource.close();
+                // Fallback: restart polling if SSE fails
+                setInterval(() => {
+                    fetch('/get_last_retrieval').then(res => res.json()).then(data => refreshInfo(data));
+                }, 10000);
+            };
 
             
 

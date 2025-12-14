@@ -6,7 +6,9 @@ import numpy as np
 import time
 import logging
 import uuid
-from redis_client import cache_result # Import caching decorator
+from redis_client import cache_result, redis_client # Import caching decorator and client
+import json
+
 
 # New Imports for Hybrid Search
 from rank_bm25 import BM25Okapi
@@ -17,8 +19,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class DocumentContextManager:
     def __init__(self, similarity_threshold=0.15):
         self.id = str(uuid.uuid4())
-        # self.client = Client(Settings(persist_directory="./chroma_storage", anonymized_telemetry=False))
-        # logging.info("Chroma Initialized")
         self.client = chromadb.PersistentClient(path="./chroma_storage")  # ← Change to this
         logging.info("Persistent Chroma Initialized - Data auto-saves to ./chroma_storage/")
         self.collection = self.client.get_or_create_collection("documents", metadata={"hnsw:space": "cosine"}) # Ensure cosine similarity is used
@@ -319,6 +319,15 @@ class DocumentContextManager:
                 
         
         logging.info(f"Retrieved {len(similar_docs)} documents with similarity >= {self.similarity_threshold}")
+        
+        # Publish to Redis channel
+        publish_data = {
+            "timestamp": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
+            "results": similar_docs  # Your list of dicts (doc_id, document, metadata, similarity)
+        }
+        redis_client.publish("retrieval_channel", json.dumps(publish_data))
+        logging.info("Published retrieval results to Redis pub/sub channel")
+        
         return similar_docs
 
 
