@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class DocumentContextManager:
     def __init__(self, similarity_threshold=0.15):
         self.id = str(uuid.uuid4())
-        self.client = chromadb.PersistentClient(path="./chroma_storage")  # ← Change to this
+        self.client = chromadb.PersistentClient(path="./chroma_storage")  # ← Change to this for persistence
         logging.info("Persistent Chroma Initialized - Data auto-saves to ./chroma_storage/")
         self.collection = self.client.get_or_create_collection("documents", metadata={"hnsw:space": "cosine"}) # Ensure cosine similarity is used
         logging.info(f"Chroma collection loaded: {self.collection.count()} total documents persisted")

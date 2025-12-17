@@ -396,10 +396,14 @@ def upload_pdf():
     status_summary = f"Processed {len(results)} files: " + ", ".join(
         f"{res['filename']} ({res['status']})" for res in results
     )
+  
+    
     return jsonify({
         "status": status_summary,
         "details": results
     }), 200 if any(res['status'] == 'success' for res in results) else 400
+    
+    
     
 @app.route('/delete_document', methods=['POST'])
 def delete_document():
@@ -413,6 +417,7 @@ def delete_document():
         if not existing['ids']:
             return jsonify({"status": f"Document {doc_id} not found"}), 400
         context_manager.collection.delete(ids=[doc_id])
+       
         logging.info(f"Deleted document {doc_id}")
         return jsonify({"status": f"Document {doc_id} deleted successfully"})
     except Exception as e:
@@ -640,8 +645,8 @@ def stream_retrieval():
                 yield f"data: {message.get('data')}\n\n"
     
     return Response(stream_with_context(event_stream()), mimetype='text/event-stream')
-    
-        
+
+  
      
 if __name__ == '__main__':
     app.run(debug=False)

@@ -465,25 +465,6 @@ class ConversationManager:
                 tts.speak(self.llm_response)
             
 
-        # while True:
-        #     if not self.transcription_active:
-        #         self.transcription_active = True
-        #         # New: Modified pass TTS for interuption handling
-        #         await get_transcript(handle_full_sentence, self.tts)
-        
-        #    # await get_transcript(handle_full_sentence)
-        #         if "goodbye" in self.transcription_response.lower():
-        #             break
-        #         if self.transcription_response:
-        #             self.llm_response = self.llm.process(self.transcription_response)
-        #             # NEW: Ssync TTS
-        #             await self.tts.speak(self.llm_response)
-                    
-            # OLD ASYNC CALL
-            # self.llm_response = self.llm.process(self.transcription_response)                            
-            # tts = TextToSpeech()
-            # tts.speak(self.llm_response)
-    
     
     def run_transcription(self):
         self.transcription_active = True
