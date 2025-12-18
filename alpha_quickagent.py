@@ -34,7 +34,7 @@ from deepgram import (
     Microphone,
 )
 from redis_client import cache_result # New: Import cahing decorator for web search DDGS
-
+from web_utils import browse_page  # New: Import browse_page utility function
 # NEW: Setup logging to catcg errors and debug info
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -73,9 +73,9 @@ class LanguageModelProcessor:
         self.list_docs_pattern = re.compile(r"\b(list documents|what documents|available documents|show documents|documents in context)\b", re.IGNORECASE)
         self.web_search_pattern = re.compile(r"\b(web search|online research|current information|latest information|duckduckgo|search web|search online)\b", re.IGNORECASE)  # NEWx
         self.online_research_enabled = True # Default to true
-        self.browse_page_instructions = "Extract the main content, key facts, and relevant details from the page. Focus on body text, ignore navigation, ads, and scripts. Limit to 400 words."
-        self.browse_page_timeout = 10
-        self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' 
+        # self.browse_page_instructions = "Extract the main content, key facts, and relevant details from the page. Focus on body text, ignore navigation, ads, and scripts. Limit to 400 words."
+        # self.browse_page_timeout = 10
+        # self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' 
         self.think_pattern = re.compile(r'<think>.*?</think>|<reasoning>.*?</reasoning>|(?:\n|^)Thinking:.*?(?:\n|$)', re.DOTALL | re.IGNORECASE)
         
     # NEW
@@ -83,38 +83,6 @@ class LanguageModelProcessor:
         self.online_research_enabled = True
         logging.info(f"Online research {'enabled' if enabled else 'disabled'}")
         
-    # New web search utility function (called in perform_web_search_with_browse)
-    def browse_page(self, url, instructions=None):
-        """Fetch and extract clean text from a webpage."""
-        if not instructions:
-            instructions = self.browse_page_instructions
-        
-        try:
-            headers = {'User-Agent': self.user_agent}  # Add User-Agent to mimic browser
-            response = requests.get(url, headers=headers, timeout=self.browse_page_timeout)
-            if response.status_code != 200:
-                logging.warning(f"Browse failed for url: {url} with status code {response.status_code}")
-                return "Page unavailable"
-            
-            soup = BeautifulSoup(response.text, 'html.parser')   
-            for element in soup(['script', 'style', 'header', 'footer']):
-                element.decompose()
-                
-            text = soup.get_text(separator=' ', strip=True)
-            # Clean and truncate
-            clean_text = re.sub(r'\s+', ' ', text)[:2000]  # Limit to ~2000 chars (~500 tokens)
-            if len(clean_text) < 100:
-                logging.warning(f"Little content extracted from {url}")
-                return "Insufficient content on page."
-            
-            logging.info(f"Browsed {url}: {len(clean_text)} chars extracted")
-            return clean_text
-        except requests.RequestException as e:
-            logging.error(f"Request error for {url}: {str(e)}")
-            return "Page fetch failed."
-        except Exception as e:
-            logging.error(f"Browse page error for {url}: {str(e)}")
-            return "Page processing failed."
                                      
     # NEW Web Search function using DUCKDUCKGO and caching with redis
     @cache_result(ttl=600) # Cahce Results for 10 minutes   
@@ -133,7 +101,7 @@ class LanguageModelProcessor:
                 for result in search_results:
                     url = result['href']
                     logging.info(f"Browsing URL: {url}")
-                    page_content = self.browse_page(url) # util function to and extract text
+                    page_content = browse_page(url) # util function to find and extract text in web_utils.py
                     if page_content and "failed" not in page_content.lower():
                         full_content.append(f"From '{result['title']}' ({url}): {page_content}")
                     else:
@@ -221,12 +189,7 @@ class LanguageModelProcessor:
             if self.context_manager: 
                 similar_docs = self.context_manager.get_similar_documents(text, top_k=10)
                 logging.info(f"Retrieved {len(similar_docs)} similar documents using instance ID: {self.context_manager.id}")
-                # context = " ".join([self.context_manager.documents[doc_id] for doc_id, _ in similar_docs])  # Combine the text of the similar documents
-                # context = " ".join([doc['document'] for doc in similar_docs])  # Extract the document text from each result
                 if similar_docs:
-                    # Flatten the document field to get the text
-                    # context = " ".join([doc['document'][0] for doc in similar_docs if doc['document']])  # Safely access the first item
-                    # Build context with source attribution for multi-doc clarity
                     context_parts = []
                     for doc in similar_docs:
                         filename = doc['metadata'].get('filename', 'Unknown')
