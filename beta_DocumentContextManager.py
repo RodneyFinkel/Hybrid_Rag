@@ -50,8 +50,9 @@ class DocumentContextManager:
         self.bm25_index = None
         self.documents_for_bm25 = [] # list of tokenized docs for BM25
         
-     # =================SETTERS/GETTERS=================   
-
+        
+    # =================SETTERS/GETTERS=================
+    
     def set_similarity_threshold(self, threshold):  # NEW: Set the similarity threshold for document retrieval
         if not isinstance(threshold, (int, float)) or threshold < 0 or threshold > 1:
             raise ValueError("Similarity threshold must be a number between 0 and 1")
@@ -68,6 +69,43 @@ class DocumentContextManager:
             
     def get_retrieval_config(self):
         return self.retrieval_config
+    
+        # ================= MULTI-CHUNK / MULTI-HOP HELPERS =================
+
+    def _group_chunks_by_document(self, raw_results):
+        """
+        raw_results: self.last_raw_results
+        Returns {doc_id: [chunk_dicts]}
+        """
+        grouped = {}
+        for r in raw_results:
+            grouped.setdefault(r["doc_id"], []).append(r)
+        return grouped
+
+    def _score_documents(self, grouped_chunks, lambda_tail=0.25):
+        """
+        Aggregate chunk scores into document-level scores.
+        """
+        scored_docs = []
+        for doc_id, chunks in grouped_chunks.items():
+            chunks = sorted(chunks, key=lambda x: x["similarity"], reverse=True)
+            head = chunks[0]["similarity"]
+            tail = sum(c["similarity"] for c in chunks[1:]) * lambda_tail
+            scored_docs.append({
+                "doc_id": doc_id,
+                "score": head + tail,
+                "chunks": chunks
+            })
+        return sorted(scored_docs, key=lambda x: x["score"], reverse=True)
+
+    def _is_multihop_query(self, query: str) -> bool:
+        triggers = [
+            "how", "why", "compare", "difference",
+            "relationship", "leads to", "impact"
+        ]
+        q = query.lower()
+        return any(t in q for t in triggers)
+
         
     
     # NEW: using Sentence Transformer
@@ -135,19 +173,6 @@ class DocumentContextManager:
         logging.info(f"BM25 scores normalized: min={min_score}, max={max_score}")
         return normalized_scores
     
-    # def rebuild_bm25_from_chroma(self):
-    #     all_data = self.collection.get(include=['documents'])
-    #     self.documents_for_bm25 = []
-    #     for doc in all_data['documents']:
-    #         tokenized_doc = doc.lower().split()
-    #         if tokenized_doc:
-    #             self.documents_for_bm25.append(tokenized_doc)
-    #     if self.documents_for_bm25:
-    #         try:
-    #             self.bm25_index = BM25Okapi(self.documents_for_bm25)
-    #             logging.info(f"Rebuilt BM25 index from {len(self.documents_for_bm25)} existing documents")
-    #         except Exception as e:
-    #             logging.error(f"Failed to rebuild BM25 from Chroma: {str(e)}")
                 
     # Fix BM25 rebuild call
     def rebuild_bm25_from_chroma(self):
@@ -190,7 +215,8 @@ class DocumentContextManager:
 
 
     
-    #  Using Chromadb and Redis Caching
+    #  Using Chromadb and Redis Caching______Orchesration of Hybrid Search + Reranking
+    
     @cache_result(ttl=600) # Cache results for 10 minutes
     def get_similar_documents(self, query, top_k=10, keyword_filter=None):
         logging.info("initiating get_similar_documents function")
@@ -222,11 +248,48 @@ class DocumentContextManager:
                 "distance": distances[i],
                 "similarity": 1 - distances[i],
                 "filename": metadatas[i].get("filename", "Unknown") if metadatas else "Unknown",
+
+                # UI/debug only
                 "snippet": documents[i][:100] + "..." if documents and len(documents[i]) > 100 else documents[i],
-                "bm25_score": 0.0 # Placeholder: updated below
+
+                # REQUIRED for multi-hop + ColBERT
+                "full_text": documents[i],
+
+                "bm25_score": 0.0
             } for i in range(len(ids))
         ]
+
         logging.info("initializing self.last_raw_results in get_similar_documents")
+        
+                # ================= DOCUMENT-LEVEL AGGREGATION =================
+                
+        grouped = self._group_chunks_by_document(self.last_raw_results)
+        scored_documents = self._score_documents(grouped)
+
+        # Take top-N documents, not chunks
+        top_doc_k = 10
+        top_documents = scored_documents[:top_doc_k]
+
+        logging.info(f"Selected {len(top_documents)} documents after aggregation")
+        
+                # ================= MULTI-CHUNK EXPANSION =================
+                
+        expanded_chunks = []
+        window = 2 if self._is_multihop_query(query) else 1
+
+        for doc in top_documents:
+            chunks = sorted(doc["chunks"], key=lambda x: x["distance"])
+            expanded_chunks.extend(chunks[: window + 1])
+
+        logging.info(f"Expanded to {len(expanded_chunks)} chunks after expansion")
+
+        # ================= USE EXPANDED CHUNKS AS WORKING SET =================
+        
+        ids = [c["doc_id"] for c in expanded_chunks]
+        documents = [c["full_text"] for c in expanded_chunks]
+        metadatas = [{"filename": c["filename"]} for c in expanded_chunks]
+        distances = [c["distance"] for c in expanded_chunks]
+
         
         # Search to see if singleton in LanguageModelProcessor uses correct context_manager instance/object
         print(self.retrieval_config)
@@ -244,63 +307,79 @@ class DocumentContextManager:
             hybrid_scores = {}
             for i, doc_id in enumerate(ids):
                 semantic_sim = 1 - distances[i]
-                bm25_score = normalized_bm25_scores[i] if i < len(normalized_bm25_scores) else 0 # Align with retrieved docs
-                self.last_raw_results[i]["bm25_score"] = bm25_score # Store normalized BM25 score
+                bm25_idx = self.doc_id_to_bm25_index.get(doc_id)
+                bm25_score = (
+                    normalized_bm25_scores[bm25_idx]
+                    if bm25_idx is not None and bm25_idx < len(normalized_bm25_scores)
+                    else 0.0
+                )
+                # bm25_score = normalized_bm25_scores[i] if i < len(normalized_bm25_scores) else 0 # Align with retrieved docs
+                # self.last_raw_results[i]["bm25_score"] = bm25_score # Store normalized BM25 score
+                for r in self.last_raw_results:
+                    if r["doc_id"] == doc_id:
+                        r["bm25_score"] = bm25_score
+                        break
                 fused_score = (
                     self.retrieval_config['semantic_weight'] * semantic_sim +
                     self.retrieval_config['bm25_weight'] * bm25_score
                 )
                 hybrid_scores[doc_id] = fused_score
                 logging.info(f"Doc {doc_id}: semantic={semantic_sim:.4f}, bm25={bm25_score:.4f}, fused={fused_score:.4f}")
-                
-            # sort by fused top score and take top k # FIXED: dropped refetch docs everytime
-            sorted_docs = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
-            # Reorder results based on sorted doc_ids
-            sorted_ids = [doc[0] for doc in sorted_docs]
-            sorted_documents = []
-            sorted_metadatas = []
-            sorted_distances = []
-            for doc_id in sorted_ids:
-                idx = ids.index(doc_id)
-                sorted_documents.append(documents[idx])
-                sorted_metadatas.append(metadatas[idx])
-                sorted_distances.append(1 - hybrid_scores[doc_id])  # Convert fused score back to distance for consistency
+
+
+            # Sort by fused score
+            sorted_ids = sorted(hybrid_scores, key=hybrid_scores.get, reverse=True)[:top_k]
+
             ids = sorted_ids
-            documents = sorted_documents
-            metadatas = sorted_metadatas
-            # Update distances to reflect fused scores for consistency
-            distances = sorted_distances
+            documents = [documents[ids.index(i)] for i in sorted_ids]
+            metadatas = [metadatas[ids.index(i)] for i in sorted_ids]
+            distances = [1.0 - hybrid_scores[i] for i in sorted_ids]
         else:
             logging.info("Hybrid search skipped: hybrid_enabled=%s, bm25_index=%s",
                          self.retrieval_config['hybrid_enabled'], self.bm25_index is not None)        
-            
+           
                 
-        # New: ColBERT reranking if enabled
-        if self.retrieval_config['rerank_enabled'] and self.colbert_reranker:
-            # Prepare docs for reranking
-            rerank_docs = documents[:self.retrieval_config['rerank_k']]
-            reranked = self.colbert_reranker.rerank(query, rerank_docs, k=top_k)
-            # Extract raw ColBERT scores
-            colbert_scores = [doc['score'] for doc in reranked]
-            #Normalise ColBERT scores to [0,1] using min-max
-            if colbert_scores:
-                min_colbert = min(colbert_scores)
-                max_colbert = max(colbert_scores)
-                if max_colbert > min_colbert:
-                     normalized_colbert = [(score - min_colbert) / (max_colbert - min_colbert) for score in colbert_scores]
-                else:
-                    normalized_colbert = [0.0] * len(colbert_scores)
-                logging.info(f"Normalized ColBERT scores: min={min_colbert}, max={max_colbert}")
-            else:
-                normalized_colbert = []
-                    
-            # Update with reranked order/scores
-            documents = [doc['content'] for doc in reranked]
-            metadatas = [metadatas[rerank_docs.index(doc['content'])] for doc in reranked]
-            # Update distances to reflect ColBERT scores
-            distances = [1 - norm_score for norm_score in normalized_colbert]
-            ids = [ids[rerank_docs.index(doc['content'])] for doc in reranked]                
-                       
+       
+        # ================= COLBERT RERANK (ON EXPANDED CHUNKS) =================
+        
+        if self.retrieval_config['rerank_enabled'] and self.colbert_reranker and documents:
+            logging.info("Starting ColBERT reranking on expanded chunks")
+
+            # texts = documents[: self.retrieval_config['rerank_k']]
+            texts = [
+                {"idx": i, "text": documents[i]}
+                for i in range(min(len(documents), self.retrieval_config['rerank_k']))
+            ]   
+
+            reranked = self.colbert_reranker.rerank(
+                query,
+                # texts,
+                [t['text'] for t in texts],
+                k=min(top_k, len(texts))
+            )
+
+            scores = [r["score"] for r in reranked]
+            min_s, max_s = min(scores), max(scores)
+
+            norm_scores = (
+                [(s - min_s) / (max_s - min_s) for s in scores]
+                if max_s > min_s else
+                [0.0] * len(scores)
+            )
+
+            new_ids, new_docs, new_metas, new_dists = [], [], [], []
+
+            for r, ns in zip(reranked, norm_scores):
+                idx = next(t["idx"] for t in texts if t["text"] == r["content"]) # Find original index
+                new_ids.append(ids[idx])
+                new_docs.append(documents[idx])
+                new_metas.append(metadatas[idx])
+                new_dists.append(1.0 - ns)
+
+            ids, documents, metadatas, distances = (
+                new_ids, new_docs, new_metas, new_dists
+            )
+         
         
         # NEW: Similarity threshold filtering
         similar_docs = []
@@ -320,7 +399,7 @@ class DocumentContextManager:
         
         logging.info(f"Retrieved {len(similar_docs)} documents with similarity >= {self.similarity_threshold}")
         
-        # Publish to Redis channel
+        # Publish to Redis channela
         publish_data = {
             "timestamp": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
             "results": similar_docs  # Your list of dicts (doc_id, document, metadata, similarity)

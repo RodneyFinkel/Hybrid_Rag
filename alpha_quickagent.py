@@ -73,9 +73,6 @@ class LanguageModelProcessor:
         self.list_docs_pattern = re.compile(r"\b(list documents|what documents|available documents|show documents|documents in context)\b", re.IGNORECASE)
         self.web_search_pattern = re.compile(r"\b(web search|online research|current information|latest information|duckduckgo|search web|search online)\b", re.IGNORECASE)  # NEWx
         self.online_research_enabled = True # Default to true
-        # self.browse_page_instructions = "Extract the main content, key facts, and relevant details from the page. Focus on body text, ignore navigation, ads, and scripts. Limit to 400 words."
-        # self.browse_page_timeout = 10
-        # self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' 
         self.think_pattern = re.compile(r'<think>.*?</think>|<reasoning>.*?</reasoning>|(?:\n|^)Thinking:.*?(?:\n|$)', re.DOTALL | re.IGNORECASE)
         
     # NEW
