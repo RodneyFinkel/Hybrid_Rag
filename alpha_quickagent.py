@@ -24,7 +24,6 @@ from langchain.chains import LLMChain
 from ddgs import DDGS
 import logging # New
 import re
-from bs4 import BeautifulSoup
 
 from deepgram import (
     DeepgramClient,
