@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickRagAgent Sign In</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Toastify -->
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui']
+          },
+          colors: {
+            glass: 'rgba(255,255,255,0.12)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Deepgram-style animated gradient text */
+    .gradient-text {
+      background: linear-gradient(
+        90deg,
+        #7c7cff,
+        #00e5ff,
+        #00ffa3,
+        #7c7cff
+      );
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradient-flow 8s linear infinite;
+    }
+
+    @keyframes gradient-flow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    /* Glass helpers */
+    .glass {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    .glass-button {
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .glass-button:hover {
+      background: rgba(255,255,255,0.28);
+    }
+
+    /* Spinner */
+    .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #6366f1;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen font-sans text-gray-900 dark:text-gray-100
+             bg-gradient-to-br from-indigo-50 via-white to-emerald-50
+             dark:from-gray-900 dark:via-gray-900 dark:to-black">
+
+  <!-- NAVBAR (UNCHANGED) -->
+  <header class="glass fixed top-0 inset-x-0 z-50 border-b border-white/20">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="https://github.com/RodneyFinkel" target="_blank">
+        <img src="{{ url_for('static', filename='alep.png') }}"
+             class="w-14 h-14 rounded-full" />
+      </a>
+      <h1 class="text-xl font-bold">QuickRagAgent</h1>
+      <button id="themeToggle"
+              class="glass-button rounded-full p-2">
+        🌗
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="pt-28 px-6">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+      <!-- LEFT PANEL -->
+      <section class="hidden lg:block">
+        <div class="glass rounded-3xl p-12 shadow-xl">
+          <h2 class="text-5xl font-extrabold leading-tight tracking-tight">
+            <span class="gradient-text">Voice AI APIs</span><br />
+            that just work
+          </h2>
+
+          <p class="mt-6 text-lg text-gray-700 dark:text-gray-300 max-w-xl">
+            QuickRagAgent is a production-grade RAG stack combining
+            real-time speech, low-latency inference, and retrieval that scales.
+          </p>
+
+          <!-- BADGE LINKS -->
+          <div class="mt-10 flex flex-wrap gap-4">
+            <a href="https://deepgram.com" target="_blank"
+               class="glass-button px-4 py-2 rounded-full text-sm font-semibold">
+              🎙 Deepgram
+            </a>
+            <a href="https://groq.com" target="_blank"
+               class="glass-button px-4 py-2 rounded-full text-sm font-semibold">
+              ⚡ Groq LPU
+            </a>
+            <a href="https://github.com/RodneyFinkel" target="_blank"
+               class="glass-button px-4 py-2 rounded-full text-sm font-semibold">
+              💻 GitHub
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL — SIGN-IN (UNCHANGED CONTENT) -->
+      <section>
+        <div class="glass max-w-md mx-auto p-6 rounded-xl transition-all hover:shadow-lg">
+          <h2 class="text-center text-2xl font-semibold mb-6">Sign In</h2>
+
+          <form id="signinForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Email</label>
+              <input type="email" required
+                     class="w-full rounded-lg p-2 bg-white/80 dark:bg-gray-800/80
+                            border border-white/30 focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">Username</label>
+              <input type="text" required
+                     class="w-full rounded-lg p-2 bg-white/80 dark:bg-gray-800/80
+                            border border-white/30 focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <button type="submit"
+                    class="w-full glass-button rounded-full py-2 font-medium
+                           text-indigo-600 hover:text-indigo-500 flex justify-center items-center">
+              Sign In
+              <span id="signinSpinner" class="spinner ml-2"></span>
+            </button>
+          </form>
+
+          <p class="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+            Powered by <span class="font-semibold">Deepgram</span> &amp;
+            <span class="font-semibold">Groq</span>
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="mt-20 glass border-t border-white/20 py-4 text-center text-sm">
+    © 2025 QuickRagAgent. All rights reserved.
+  </footer>
+
+  <!-- EXISTING JS (UNCHANGED LOGIC) -->
+  <script>
+     document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            const lightIcon = document.getElementById('lightIcon');
+            const darkIcon = document.getElementById('darkIcon');
+            themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                lightIcon.classList.toggle('hidden');
+                darkIcon.classList.toggle('hidden');
+            });
+
+            // Sign-in form submission
+            const signinForm = document.getElementById('signinForm');
+            const signinButton = signinForm.querySelector('button[type="submit"]');
+            const signinSpinner = document.getElementById('signinSpinner');
+
+            signinForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                signinButton.disabled = true;
+                signinSpinner.style.display = 'inline-block';
+
+                const formData = new FormData(signinForm);
+                const data = {
+                    email: formData.get('email'),
+                    username: formData.get('username')
+                };
+
+                fetch('/signin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error || 'Sign-in failed'); });
+                        }
+                        return response.json();
+                    })
+                    .then(result => {
+                        Toastify({
+                            text: result.status || 'Signed in successfully',
+                            duration: 3000,
+                            style: { background: '#10b981' }
+                        }).showToast();
+                        window.location.href = '/dashboard';
+                    })
+                    .catch(error => {
+                        Toastify({
+                            text: 'Error signing in: ' + error.message,
+                            duration: 3000,
+                            style: { background: '#ef4444' }
+                        }).showToast();
+                        signinButton.disabled = false;
+                        signinSpinner.style.display = 'none';
+                    });
+            });
+        });
+  </script>
+
+</body>
+</html>
