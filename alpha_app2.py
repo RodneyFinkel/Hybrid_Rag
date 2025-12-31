@@ -527,7 +527,7 @@ def get_stocks():
                 'symbol': symbol,
                 'price': price
             })
-            time.sleep(5) # Avoid hitting the API too fast
+            time.sleep(30) # Avoid hitting the API too fast
     except Exception as e:
         return jsonify({'error': str(e)})
 
