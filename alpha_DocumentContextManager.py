@@ -40,7 +40,7 @@ class DocumentContextManager:
             'bm25_k1': 1.2,           # BM25 term saturation
             'bm25_b': 0.75,           # BM25 length normalization
             'rerank_enabled': True,  # Toggle ColBERT reranking
-            'rerank_k': 50,           # Initial retrieve this many for reranking, then take top_k
+            'rerank_k': 10,           # Initial retrieve this many for reranking, then take top_k
             'colbert_model': 'colbert-ir/colbertv2.0'  # Pretrained ColBERT model
         }    
         
