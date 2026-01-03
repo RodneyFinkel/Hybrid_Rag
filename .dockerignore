@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.Python
+env/
+venv/
+new_env/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+flask_session/*
+uploads/*
+*.rdb
+.env
+.env.local

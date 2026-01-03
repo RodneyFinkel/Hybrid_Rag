@@ -3,10 +3,16 @@ import json
 import hashlib
 from functools import wraps # make the wrapper preserve the original function's metadata
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+# Support both local development and Docker environments
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_DB = int(os.getenv('REDIS_DB', 0))
+
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 
 def cache_result(ttl=86400):
     def decorator(fn):

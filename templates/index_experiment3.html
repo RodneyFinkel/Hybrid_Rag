@@ -45,7 +45,7 @@
     <style>
         
         #retrievalTable td:nth-child(2) {
-            max-width: 300px;
+            max-width: 500px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -300,8 +300,11 @@
     
     <div class="container mx-auto px-6 py-8 flex flex-1">
         <aside class="w-80 pr-6 space-y-6 lg:sticky lg:top-8">
-            <button id="sidebarToggle" class="glass-button border border-gray-200/10 p-1 rounded-lg hover:bg-white/30 dark:hover:bg-gray-700/30 transition-all duration-200">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            <button id="sidebarToggle" type="button" aria-controls="sidebar" aria-expanded="true" class="glass-button border border-gray-200/10 p-1 rounded-lg hover:bg-white/30 dark:hover:bg-gray-700/30 transition-all duration-200">
+                <!-- Menu icon (shown when sidebar is closed) -->
+                <svg id="menuIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <!-- Close icon (shown when sidebar is open) -->
+                <svg id="closeIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             <div id="sidebar" class="space-y-6 hidden lg:block">
                 <div class="glass rounded-xl p-6 transition-all duration-300 hover:shadow-lg">
@@ -598,5 +601,63 @@
         © 2026 QuickRagAgent. All rights reserved.
     </footer>
    
+</footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const toggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+
+            function setSidebarOpen(open){
+                if(open){
+                    sidebar.classList.remove('hidden');
+                    sidebar.classList.add('lg:block');
+                    toggle.setAttribute('aria-expanded', 'true');
+                } else {
+                    sidebar.classList.add('hidden');
+                    sidebar.classList.remove('lg:block');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+                try { localStorage.setItem('sidebarOpen', open ? 'true' : 'false'); } catch(e){}
+            }
+
+            // initialize from saved state (if any)
+            try {
+                const saved = localStorage.getItem('sidebarOpen');
+                if(saved !== null){
+                    setSidebarOpen(saved === 'true');
+                } else {
+                    // default behaviour: keep current classes (respect lg:block)
+                    const isHidden = sidebar.classList.contains('hidden');
+                    toggle.setAttribute('aria-expanded', (!isHidden).toString());
+                }
+            } catch(e){ /* ignore storage errors */ }
+
+            const menuIcon = document.getElementById('menuIcon');
+            const closeIcon = document.getElementById('closeIcon');
+
+            function updateToggleIcon(open){
+                if(menuIcon && closeIcon){
+                    // when open: show close icon, hide menu; when closed: inverse
+                    menuIcon.classList.toggle('hidden', open);
+                    closeIcon.classList.toggle('hidden', !open);
+                }
+            }
+
+            toggle.addEventListener('click', function(e){
+                const willOpen = sidebar.classList.contains('hidden');
+                setSidebarOpen(willOpen);
+                // small button animation
+                toggle.classList.add('scale-95');
+                setTimeout(()=> toggle.classList.remove('scale-95'), 120);
+            });
+
+            // keep icons in sync when setting from storage/init
+            const observer = new MutationObserver(()=>{
+                const isHidden = sidebar.classList.contains('hidden');
+                updateToggleIcon(!isHidden);
+            });
+            if(sidebar) observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+        });
+    </script>
 </body>
 </html>
