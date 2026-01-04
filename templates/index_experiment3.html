@@ -602,62 +602,6 @@
     </footer>
    
 </footer>
-    <script>
-        document.addEventListener('DOMContentLoaded', function(){
-            const toggle = document.getElementById('sidebarToggle');
-            const sidebar = document.getElementById('sidebar');
-
-            function setSidebarOpen(open){
-                if(open){
-                    sidebar.classList.remove('hidden');
-                    sidebar.classList.add('lg:block');
-                    toggle.setAttribute('aria-expanded', 'true');
-                } else {
-                    sidebar.classList.add('hidden');
-                    sidebar.classList.remove('lg:block');
-                    toggle.setAttribute('aria-expanded', 'false');
-                }
-                try { localStorage.setItem('sidebarOpen', open ? 'true' : 'false'); } catch(e){}
-            }
-
-            // initialize from saved state (if any)
-            try {
-                const saved = localStorage.getItem('sidebarOpen');
-                if(saved !== null){
-                    setSidebarOpen(saved === 'true');
-                } else {
-                    // default behaviour: keep current classes (respect lg:block)
-                    const isHidden = sidebar.classList.contains('hidden');
-                    toggle.setAttribute('aria-expanded', (!isHidden).toString());
-                }
-            } catch(e){ /* ignore storage errors */ }
-
-            const menuIcon = document.getElementById('menuIcon');
-            const closeIcon = document.getElementById('closeIcon');
-
-            function updateToggleIcon(open){
-                if(menuIcon && closeIcon){
-                    // when open: show close icon, hide menu; when closed: inverse
-                    menuIcon.classList.toggle('hidden', open);
-                    closeIcon.classList.toggle('hidden', !open);
-                }
-            }
-
-            toggle.addEventListener('click', function(e){
-                const willOpen = sidebar.classList.contains('hidden');
-                setSidebarOpen(willOpen);
-                // small button animation
-                toggle.classList.add('scale-95');
-                setTimeout(()=> toggle.classList.remove('scale-95'), 120);
-            });
-
-            // keep icons in sync when setting from storage/init
-            const observer = new MutationObserver(()=>{
-                const isHidden = sidebar.classList.contains('hidden');
-                updateToggleIcon(!isHidden);
-            });
-            if(sidebar) observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
-        });
-    </script>
+    
 </body>
 </html>
