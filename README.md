@@ -9,10 +9,6 @@ Hybrid-Fusion Rag UI
 
 
 
-<img width="1284" height="968" alt="Screenshot 2026-01-04 at 13 50 49" src="https://github.com/user-attachments/assets/032035ae-8c9e-4c89-bba3-3e2b5aede04d" />
-
-
-<img width="1226" height="968" alt="Screenshot 2026-01-04 at 13 51 32" src="https://github.com/user-attachments/assets/9af55445-e444-4f13-b27e-7f989470516d" />
 
 
 
