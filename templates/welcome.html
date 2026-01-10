@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickRagAgent Sign In</title>
+    <title>QuickRagAgent Welcome</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
@@ -141,8 +141,8 @@
         <!-- <div class="glass rounded-3xl p-12 shadow-xl"> -->
         <!-- <div class="glass max-w-md w-full mx-auto p-6 rounded-xl transition-all duration-300 hover:shadow-lg">  -->
           <h2 class="text-5xl font-extrabold leading-tight tracking-tight">
-            <span class="gradient-text">Voice AI RAG</span><br />
-            Hi Fidelity Retrieval & Low Latency Inference
+            <span class="gradient-text">
+           Verify your Email and access the QuicRagAgent dashboard!
           </h2>
 
           <p class="mt-6 text-lg text-gray-700 dark:text-gray-300 max-w-xl">
@@ -168,33 +168,7 @@
         </div>
         <!-- </div> -->
       </section>
-      <section class="hidden lg:block lg:absolute lg:right-12 lg:top-1/2 lg:transform lg:-translate-y-1/2">      
-      <!-- <section class="hidden lg:block"> -->
-        <div class="glass rounded-3xl p-12 shadow-xl"> 
-        <!-- <div class="glass max-w-md w-full mx-auto p-6 rounded-xl transition-all duration-300 hover:shadow-lg"> -->
-            <h2 class="text-center mb-6">Sign In</h2>
-            <form id="signinForm" class="space-y-4">
-                <div class="group relative">
-                    <label for="email" class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Email</label>
-                    <input type="email" id="email" name="email" required class="w-full bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:outline-none transition-all duration-200">
-                    <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Enter your email address</span>
-                </div>
-                <div class="group relative">
-                    <label for="username" class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Username</label>
-                    <input type="text" id="username" name="username" required class="w-full bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200/20 rounded-lg p-2 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:outline-none transition-all duration-200">
-                    <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Enter your username</span>
-                </div>
-                <button type="submit" class="group relative w-full glass-button border border-gray-200/20 px-3 py-2 rounded-full hover:bg-white/30 dark:hover:bg-gray-700/30 text-primary hover:text-indigo-400 text-sm font-medium transition-all duration-200 flex items-center justify-center">
-                    Sign In
-                    <span id="signinSpinner" class="spinner ml-2"></span>
-                    <span class="tooltip absolute bg-gray-800 text-white text-xs rounded py-1 px-2 -top-10 left-1/2 transform -translate-x-1/2">Sign in to your account</span>
-                </button>
-            </form>
-            <p class="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
-                Powered by <span class="font-semibold">Deepgram</span> and <span class="font-semibold">Groq LPU's</span>
-            </p>
-        </div>
-      </section>
+    
     </main>
     <footer class="glass border-t border-gray-100/20 py-4 text-center text-sm text-gray-600 dark:text-gray-400">
         © 2026 QuickRagAgent. All rights reserved.
@@ -211,52 +185,7 @@
                 darkIcon.classList.toggle('hidden');
             });
 
-            // Sign-in form submission
-            const signinForm = document.getElementById('signinForm');
-            const signinButton = signinForm.querySelector('button[type="submit"]');
-            const signinSpinner = document.getElementById('signinSpinner');
-
-            signinForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                signinButton.disabled = true;
-                signinSpinner.style.display = 'inline-block';
-
-                const formData = new FormData(signinForm);
-                const data = {
-                    email: formData.get('email'),
-                    username: formData.get('username')
-                };
-
-                fetch('/signin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => { throw new Error(err.error || 'Sign-in failed'); });
-                        }
-                        return response.json();
-                    })
-                    .then(result => {
-                        Toastify({
-                            text: result.status || 'Signed in successfully',
-                            duration: 3000,
-                            style: { background: '#10b981' }
-                        }).showToast();
-                        window.location.href = '/dashboard';
-                    })
-                    .catch(error => {
-                        Toastify({
-                            text: 'Error signing in: ' + error.message,
-                            duration: 3000,
-                            style: { background: '#ef4444' }
-                        }).showToast();
-                        signinButton.disabled = false;
-                        signinSpinner.style.display = 'none';
-                    });
-            });
-        });
+            
 
         // Particles canvas: reactive pixels that move & reproduce on input
         (function(){

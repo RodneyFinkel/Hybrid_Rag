@@ -12,6 +12,7 @@ import PyPDF2
 from alpha_quickagent import ConversationManager, check_microphone, LanguageModelProcessor
 from alpha_DocumentContextManager import DocumentContextManager
 from chunk_config import CHUNK_SIZE_INGEST, CHUNK_OVERLAP_INGEST, CHUNK_SIZE_LLM, CHUNK_OVERLAP_LLM, SEMANTIC_SIMILARITY_THRESHOLD, CHUNKING_TYPE
+from email_utils import send_welcome_email
 import threading
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -134,19 +135,6 @@ def chunk_text(text, chunk_size=CHUNK_SIZE_INGEST, overlap=CHUNK_OVERLAP_INGEST,
 def index():
     return render_template('signin2.html')
 
-# @app.route('/signin', methods=['GET', 'POST'])
-# def signin():
-#     if request.method == 'POST':
-#         email = request.form['email']
-#         username = request.form['username'] 
-#         session['email'] = email  # Set session
-#         session['username'] = username 
-#         executor.submit(send_welcome_email, email)  # Send email in background
-#         # send_welcome_email(email)
-#         flash('Welcome email sent successfully!', 'success')
-#         return redirect(url_for('dashboard'))
-#     return render_template('signin.html')
-
 @app.route('/signin', methods=['GET', 'POST'])
 def signin():
     if request.method == 'POST':
@@ -162,7 +150,7 @@ def signin():
                 return jsonify({"error": "Missing email or username"}), 400
             session['email'] = email
             session['username'] = username
-            executor.submit(send_welcome_email, email)
+            executor.submit(send_welcome_email, app, mail, email, username)
             logging.info(f"Signed in user: {username} ({email})")
             return jsonify({"status": "Welcome email sent successfully!"}), 200
         except Exception as e:
@@ -181,11 +169,6 @@ def signout():
     session.pop('email', None)
     flash('You have been signed out.', 'info')
     return redirect(url_for('signin'))
-
-def send_welcome_email(email):
-    msg = Message('Welcome to QuickAgent!', recipients=[email])
-    msg.body = 'Thank you for signing in to QuickAgent. We are excited to have you with us!'
-    mail.send(msg)
 
 @app.route('/start_transcription', methods=['POST']) # NEW async
 def start_transcription():
