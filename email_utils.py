@@ -13,19 +13,25 @@ def get_welcome_email_html(username: str) -> str:
             <style>
                 body {{
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    color: #333;
+                    color: #ffffff;
                     line-height: 1.6;
+                    background-color: #000000;
+                    margin: 0;
+                    padding: 0;
+                }}
+                p {{
+                    color: #ffffff;
                 }}
                 .container {{
                     max-width: 600px;
                     margin: 0 auto;
                     padding: 20px;
-                    background-color: #f9f9f9;
+                    background-color: #1a1a1a;
                     border-radius: 8px;
                 }}
                 .header {{
                     text-align: center;
-                    border-bottom: 2px solid #6366f1;
+                    border-bottom: 2px solid #818cf8;
                     padding-bottom: 20px;
                     margin-bottom: 20px;
                 }}
@@ -39,7 +45,7 @@ def get_welcome_email_html(username: str) -> str:
                 .title {{
                     font-size: 28px;
                     font-weight: 600;
-                    color: #1f2937;
+                    color: #ffffff;
                     margin: 10px 0;
                 }}
                 .content {{
@@ -47,28 +53,29 @@ def get_welcome_email_html(username: str) -> str:
                 }}
                 .greeting {{
                     font-size: 18px;
-                    color: #6366f1;
+                    color: #818cf8;
                     font-weight: 600;
                     margin-bottom: 15px;
                 }}
                 .features {{
                     margin: 20px 0;
                     padding: 15px;
-                    background-color: white;
+                    background-color: #262626;
                     border-left: 4px solid #10b981;
                     border-radius: 4px;
                 }}
                 .feature-item {{
                     margin: 10px 0;
                     padding: 5px 0;
+                    color: #ffffff;
                 }}
                 .feature-icon {{
                     margin-right: 8px;
                 }}
                 .cta-button {{
                     display: inline-block;
-                    background-color: #6366f1;
-                    color: white;
+                    background-color: #818cf8;
+                    color: #000000;
                     padding: 12px 30px;
                     border-radius: 6px;
                     text-decoration: none;
@@ -78,9 +85,9 @@ def get_welcome_email_html(username: str) -> str:
                 .footer {{
                     text-align: center;
                     padding-top: 20px;
-                    border-top: 1px solid #e5e7eb;
+                    border-top: 1px solid #404040;
                     margin-top: 30px;
-                    color: #6b7280;
+                    color: #ffffff;
                     font-size: 12px;
                 }}
             </style>
@@ -90,7 +97,7 @@ def get_welcome_email_html(username: str) -> str:
                 <div class="header">
                     <img src="cid:logo" alt="QuickRagAgent Logo" class="logo">
                     <div class="title">QuickRagAgent</div>
-                    <p style="color: #6b7280; margin: 0;">Voice AI RAG System</p>
+                    <p style="color: #9ca3af; margin: 0;">Voice AI RAG System</p>
                 </div>
                 
                 <div class="content">
@@ -122,7 +129,7 @@ def get_welcome_email_html(username: str) -> str:
                 
                 <div class="footer">
                     <p>© 2026 QuickRagAgent. All rights reserved.<br>
-                    Built by <a href="https://github.com/RodneyFinkel" style="color: #6366f1; text-decoration: none;">Rodney Finkel</a></p>
+                    Built by <a href="https://github.com/RodneyFinkel" style="color: #818cf8; text-decoration: none;">Rodney Finkel</a></p>
                 </div>
             </div>
         </body>
