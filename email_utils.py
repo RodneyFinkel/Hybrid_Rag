@@ -183,8 +183,8 @@ def send_welcome_email(app, mail, email: str, username: str = 'User') -> None:
             msg.html = get_welcome_email_html(username)
             
             # Attach logo from static folder
-            with app.open_resource('static/alep.png') as logo_file:
-                msg.attach('alep.png', 'image/png', logo_file.read(), headers={'Content-ID': '<logo>'})
+            with app.open_resource('static/aleph2.png') as logo_file:
+                msg.attach('aleph.png', 'image/png', logo_file.read(), headers={'Content-ID': '<logo>'})
             
             mail.send(msg)
         logging.info(f"Welcome email sent successfully to {email}")
