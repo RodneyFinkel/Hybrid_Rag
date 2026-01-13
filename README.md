@@ -4,7 +4,7 @@ Hybrid-Fusion Rag UI
 STT-TTS real time dashboard
 <img width="1299" height="967" alt="Screenshot 2026-01-13 at 16 45 24" src="https://github.com/user-attachments/assets/1b005d9e-4751-474a-98eb-56db46518fc3" />
 
-Fine Tuning
+Hybrid-Fusion Fine Tuning
 <img width="1104" height="964" alt="Screenshot 2026-01-13 at 21 18 01" src="https://github.com/user-attachments/assets/84d11b96-7b56-49d3-86f8-cb7a5bde6f78" />
 
 
