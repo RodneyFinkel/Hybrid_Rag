@@ -1,4 +1,4 @@
-Hybrid-Fusion Rag UI
+Hybrid-Fusion Rag UI / One-shot, Internal Multi-Hop via fine tuning for an accurate context window 
 
 <img width="1383" height="772" alt="Screenshot 2025-12-31 at 6 37 46" src="https://github.com/user-attachments/assets/274e0653-9ff0-4f8e-8d65-87db4363c4ed" />
 
