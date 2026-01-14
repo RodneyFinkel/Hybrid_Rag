@@ -10,7 +10,7 @@ from redis_client import cache_result, redis_client # Import caching decorator a
 import json
 
 
-# New Imports for Hybrid Search
+# Imports for Hybrid Search
 from rank_bm25 import BM25Okapi
 from ragatouille import RAGPretrainedModel  # For ColBERT
 
@@ -44,21 +44,21 @@ class DocumentContextManager:
             'colbert_model': 'colbert-ir/colbertv2.0'  # Pretrained ColBERT model
         }    
         
-        # New: Preload ColBERT if enabled (lazy load on first use)
+        # Preload ColBERT if enabled (lazy load on first use)
         self.colbert_reranker = None
-        # New: BM25 index (built on add document)
+        # BM25 index (built on add document)
         self.bm25_index = None
         self.documents_for_bm25 = [] # list of tokenized docs for BM25
         
      # =================SETTERS/GETTERS=================   
 
-    def set_similarity_threshold(self, threshold):  # NEW: Set the similarity threshold for document retrieval
+    def set_similarity_threshold(self, threshold):  # Set the similarity threshold for document retrieval
         if not isinstance(threshold, (int, float)) or threshold < 0 or threshold > 1:
             raise ValueError("Similarity threshold must be a number between 0 and 1")
         self.similarity_threshold = float(threshold)
         logging.info(f"Updated similarity threshold to: {self.similarity_threshold}")
         
-    # New: Setters and getters for retrieval config
+    # Setters and getters for retrieval config
     def set_retrieval_config(self, config):
         self.retrieval_config.update(config)
         logging.info(f"Updated retrieval config: {self.retrieval_config}")
@@ -70,7 +70,7 @@ class DocumentContextManager:
         return self.retrieval_config
         
     
-    # NEW: using Sentence Transformer
+    # using Sentence Transformer
     def _embed_text(self, text):
         embedding = self.model.encode(text, show_progress_bar=True)
         if isinstance(embedding, np.ndarray):
@@ -109,7 +109,7 @@ class DocumentContextManager:
             documents=[clean_text]
         )
         
-        # New: Update BM25 index (THIS IS WHERE THE bm25_index is created using the desired context_manager instance)
+        # Update BM25 index (THIS IS WHERE THE bm25_index is created using the desired context_manager instance)
         tokenized_doc = clean_text.lower().split() # simple tokenization for BM25
         self.documents_for_bm25.append(tokenized_doc)
         logging.info(f"Tokenized document {doc_id}: {tokenized_doc[:10]}...(total {len(tokenized_doc)} tokens)")
@@ -215,7 +215,7 @@ class DocumentContextManager:
         metadatas = results["metadatas"][0] if results["metadatas"] else []
         distances = results["distances"][0] if results["distances"] else [] # NEW
         
-        # NEW: store raw results for debugging and ui
+        # store raw results for debugging and ui
         self.last_raw_results = [
             {
                 "doc_id": ids[i],
@@ -234,7 +234,7 @@ class DocumentContextManager:
         logging.info(f"Documents for BM25: {len(self.documents_for_bm25)}")
         logging.debug(f"BM25 index type: {type(self.bm25_index)}")
         
-        # New Hybrid Search
+        # Hybrid Search
         if self.retrieval_config['hybrid_enabled'] and self.bm25_index:
             logging.info("Starting hybrid retrieval")
             tokenized_query = query.lower().split()
@@ -275,7 +275,7 @@ class DocumentContextManager:
                          self.retrieval_config['hybrid_enabled'], self.bm25_index is not None)        
             
                 
-        # New: ColBERT reranking if enabled
+        # ColBERT reranking if enabled
         if self.retrieval_config['rerank_enabled'] and self.colbert_reranker:
             # Prepare docs for reranking
             rerank_docs = documents[:self.retrieval_config['rerank_k']]
@@ -302,7 +302,7 @@ class DocumentContextManager:
             ids = [ids[rerank_docs.index(doc['content'])] for doc in reranked]                
                        
         
-        # NEW: Similarity threshold filtering
+        # Similarity threshold filtering
         similar_docs = []
         for i in range(len(ids)):
             similarity = max(0.0, min(1.0, 1 - distances[i])) if distances else 0  # Clamp to [0,1]
