@@ -31,14 +31,14 @@ load_dotenv()
 
 class LanguageModelProcessor:
     def __init__(self):
-        self.llm = ChatGroq(temperature=0, model_name="mistral-saba-24b", groq_api_key=os.getenv("GROQ_API_KEY"))
+        self.llm = ChatGroq(temperature=0, model_name="llama-3.3-70b-versatile", groq_api_key=os.getenv("GROQ_API_KEY"))
         # self.llm = ChatOpenAI(temperature=0, model_name="gpt-4-0125-preview", openai_api_key=os.getenv("OPENAI_API_KEY"))
         # self.llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0125", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
         self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
         # Load the system prompt from a file
-        with open('system_prompt3.txt', 'r') as file:
+        with open('../system_prompt2.txt', 'r') as file:
             system_prompt = file.read().strip()
         
         self.prompt = ChatPromptTemplate.from_messages([
