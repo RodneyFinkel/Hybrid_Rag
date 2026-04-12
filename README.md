@@ -7,57 +7,103 @@ Hybrid-Fusion Rag UI
 ```bash
 git clone <GITHUB_REPO_URL>
 cd <YOUR_PROJECT_DIRECTORY>
-2. Create and activate environment
+```
+
+## 2. Create and activate environment
+
+```bash
 python3 -m venv venv
+```
 
 macOS / Linux:
 
+```bash
 source venv/bin/activate
+```
 
 Windows (PowerShell):
 
+```bash
 venv\Scripts\activate
-3. Install Redis
-macOS (Homebrew)
+```
+
+## 3. Install Redis
+
+macOS (Homebrew):
+
+```bash
 brew install redis
-Ubuntu / Debian
+```
+
+Ubuntu / Debian:
+
+```bash
 sudo apt update
 sudo apt install redis-server
-Windows
+```
 
-Option A: WSL (recommended)
+Windows:
 
+Option A: WSL (recommended):
+
+```bash
 wsl --install
+```
 
 Inside WSL:
 
+```bash
 sudo apt update
 sudo apt install redis-server
 redis-server
+```
 
-Option B: Docker
+Option B: Docker:
 
+```bash
 docker run -p 6379:6379 redis
-4. Install Python dependencies
+```
+
+## 4. Install Python dependencies
+
+```bash
 pip install -r requirements.txt
-5. Start Redis
+```
+
+## 5. Start Redis
+
+```bash
 redis-server
+```
 
 (Keep this terminal running)
 
-6. Run the app
+## 6. Run the app
+
+```bash
 python3 alpha_app2.py
-Notes
-Redis must be running before starting the app.
-Default Redis port: 6379.
+```
+
+## Notes
+
+- Redis must be running before starting the app.
+- Default Redis port: 6379.
+
+<img width="1022" height="965" alt="Screenshot 2026-01-15 at 21 48 03" src="https://github.com/user-attachments/assets/f7eb643e-c229-44d8-993a-95568c758606" />
 
 
+<img width="1383" height="772" alt="Screenshot 2025-12-31 at 6 37 46" src="https://github.com/user-attachments/assets/274e0653-9ff0-4f8e-8d65-87db4363c4ed" />
+
+STT-TTS real time dashboard
+
+<img width="1299" height="967" alt="Screenshot 2026-01-13 at 16 45 24" src="https://github.com/user-attachments/assets/1b005d9e-4751-474a-98eb-56db46518fc3" />
+
+Hybrid-Fusion Fine Tuning
+
+<img width="1104" height="964" alt="Screenshot 2026-01-13 at 21 18 01" src="https://github.com/user-attachments/assets/84d11b96-7b56-49d3-86f8-cb7a5bde6f78" />
 
 
+One-shot, Internal Multi-Hop via fine tuning for an accurate context window 
 
 
-
-
-
-
-
+<img width="1128" height="964" alt="Screenshot 2026-01-13 at 18 52 20" src="https://github.com/user-attachments/assets/4030db22-cf03-482e-a540-570be01ccb30" />
