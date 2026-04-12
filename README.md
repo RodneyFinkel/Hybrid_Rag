@@ -2,96 +2,57 @@ Hybrid-Fusion Rag UI
 
 # Project Setup and Run Instructions
 
-This guide explains how to install dependencies, start Redis, and run the application.
-
----
-
-## 1. Prerequisites
-
-Make sure the following are installed on your system:
-
-- Python 3.8 or higher
-- pip (Python package manager)
-- Redis server
-- Git
-
----
-
-## 2. Clone the Repository
+## 1. Clone the repository
 
 ```bash
-git clone <YOUR_GITHUB_REPO_URL>
+git clone <GITHUB_REPO_URL>
 cd <YOUR_PROJECT_DIRECTORY>
+2. Create and activate environment
+python3 -m venv venv
 
-3. Install and Start Redis
-Install Redis
+macOS / Linux:
 
-macOS (Homebrew):
+source venv/bin/activate
 
+Windows (PowerShell):
+
+venv\Scripts\activate
+3. Install Redis
+macOS (Homebrew)
 brew install redis
+Ubuntu / Debian
+sudo apt update
+sudo apt install redis-server
+Windows
 
-Ubuntu / Debian:
+Option A: WSL (recommended)
+
+wsl --install
+
+Inside WSL:
 
 sudo apt update
 sudo apt install redis-server
-
-Windows:
-Use WSL (recommended) or run Redis via Docker.
-
-Start Redis Server
-
-Open a separate terminal and run:
-
 redis-server
 
-Keep this terminal open while running the app.
+Option B: Docker
 
-To verify Redis is working:
-
-redis-cli ping
-
-Expected output:
-
-PONG
-4. Install Python Dependencies
-
-Open a second terminal and navigate to the project directory:
-
-cd <YOUR_PROJECT_DIRECTORY>
-
-(Optional but recommended) Create and activate a virtual environment:
-
-python3 -m venv venv
-source venv/bin/activate   # macOS / Linux
-# venv\Scripts\activate    # Windows
-
-Install dependencies:
-
+docker run -p 6379:6379 redis
+4. Install Python dependencies
 pip install -r requirements.txt
-5. Run the Application
-
-With Redis running and dependencies installed, start the app:
-
-python3 alpha_app2.py
-6. Notes
-Redis must be running before starting the application.
-Default Redis port is 6379.
-If you get connection errors, ensure redis-server is active.
-If pip installation fails, upgrade pip:
-pip install --upgrade pip
-7. Quick Start Summary
-
-Terminal 1:
-
+5. Start Redis
 redis-server
 
-Terminal 2:
+(Keep this terminal running)
 
-cd <YOUR_PROJECT_DIRECTORY>
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+6. Run the app
 python3 alpha_app2.py
+Notes
+Redis must be running before starting the app.
+Default Redis port: 6379.
+
+
+
 
 
 <img width="1022" height="965" alt="Screenshot 2026-01-15 at 21 48 03" src="https://github.com/user-attachments/assets/f7eb643e-c229-44d8-993a-95568c758606" />
