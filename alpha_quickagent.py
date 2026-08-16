@@ -42,7 +42,7 @@ load_dotenv()
 class LanguageModelProcessor:
     def __init__(self, context_manager):
         self.llm = ChatGroq(temperature=0, 
-                            model_name="llama-3.3-70b-versatile", # this is a new valid model 
+                            model_name="openai/gpt-oss-120b", # this is a new valid model 
                             groq_api_key=os.getenv("GROQ_API_KEY"), 
                             streaming=True,
                             max_retries=3,

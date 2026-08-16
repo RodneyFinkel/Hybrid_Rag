@@ -135,19 +135,7 @@ class DocumentContextManager:
         logging.info(f"BM25 scores normalized: min={min_score}, max={max_score}")
         return normalized_scores
     
-    # def rebuild_bm25_from_chroma(self):
-    #     all_data = self.collection.get(include=['documents'])
-    #     self.documents_for_bm25 = []
-    #     for doc in all_data['documents']:
-    #         tokenized_doc = doc.lower().split()
-    #         if tokenized_doc:
-    #             self.documents_for_bm25.append(tokenized_doc)
-    #     if self.documents_for_bm25:
-    #         try:
-    #             self.bm25_index = BM25Okapi(self.documents_for_bm25)
-    #             logging.info(f"Rebuilt BM25 index from {len(self.documents_for_bm25)} existing documents")
-    #         except Exception as e:
-    #             logging.error(f"Failed to rebuild BM25 from Chroma: {str(e)}")
+   
                 
     # Fix BM25 rebuild call
     def rebuild_bm25_from_chroma(self):
